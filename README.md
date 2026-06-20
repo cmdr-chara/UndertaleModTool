@@ -1,8 +1,34 @@
-# UndertaleModTool
+# UndertaleModTool WinUI Preview
 
 [![Underminers Discord](https://img.shields.io/discord/566861759210586112?label=Discord&logo=discord&logoColor=white)](https://discord.gg/hnyMDypMbN) [![GitHub](https://img.shields.io/github/license/UnderminersTeam/UndertaleModTool?logo=github)](https://github.com/UnderminersTeam/UndertaleModTool/blob/master/LICENSE.txt)
 
-The most complete tool for modding, decompiling and unpacking Undertale (and other GameMaker games!)
+A personal experimental WinUI 3 fork of UndertaleModTool focused on a modern Windows editing experience.
+
+This fork is Windows-only and is not an official replacement for upstream UndertaleModTool. It keeps the original project, license, and credits intact while exploring a different UI direction: a native Windows shell, faster browsing workflows, richer previews, and more direct editing surfaces for common GameMaker resources.
+
+The original UndertaleModTool project is maintained by the Underminers team at [UnderminersTeam/UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool).
+
+# What This Fork Improves
+
+* Modern Windows-native interface built with WinUI 3.
+* Cleaner resource browsing with category counts, filtering, tabs, and flatter navigation.
+* Better texture and sprite preview workflows, including render-on-demand behavior, zoom controls, frame navigation, larger previews, and export actions close to the preview.
+* More useful embedded texture interaction, including selecting texture page items from atlas previews instead of manually hunting IDs.
+* In-app audio playback for embedded audio and sound resources, with visible metadata such as format, byte size, linked audio IDs, volume, pitch, preload, and group information.
+* Faster repeated preview/export workflows through caching and less eager rendering of heavy resources.
+* A cleaner empty state and recent-file flow for opening `data.win` files.
+* Script command entry for quick C# script commands without digging through menus.
+* Focused Windows UX polish: native-feeling title/header layout, calmer colors, better spacing, and less noisy selection/hover states.
+
+# Scope
+
+This fork is Windows-only.
+
+Cross-platform work should continue separately in Avalonia or another cross-platform UI stack. This fork is the place where the WinUI experiment can live without creating maintenance pressure for upstream.
+
+# Original Project
+
+UndertaleModTool is the most complete tool for modding, decompiling and unpacking Undertale (and other GameMaker games!)
 
 > *\* (Seeing such a specialized tool, the culmination of work from many amazing contributors...)*
 

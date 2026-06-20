@@ -825,8 +825,8 @@ public sealed partial class MainPage : Page, IScriptInterface
     {
         ContentDialog dialog = new()
         {
-            Title = "About UndertaleModTool.WinUI",
-            Content = "UndertaleModTool WinUI sidecar\n\nA modern WinUI shell for browsing and editing GameMaker data files.",
+            Title = "About UndertaleModTool WinUI Preview",
+            Content = "A personal experimental WinUI 3 fork of UndertaleModTool focused on a modern Windows editing experience.",
             PrimaryButtonText = "OK",
             DefaultButton = ContentDialogButton.Primary,
             XamlRoot = XamlRoot
@@ -18766,14 +18766,14 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private void UpdateWindowTitle()
     {
-        string title = "UndertaleModTool.WinUI";
+        string title = "UndertaleModTool WinUI Preview";
         if (_data is not null)
         {
             string gameName = FormatTitle(_data.GeneralInfo?.Name?.Content);
             string fileName = string.IsNullOrWhiteSpace(_currentFilePath)
                 ? "Untitled"
                 : Path.GetFileName(_currentFilePath);
-            title = $"{gameName} - {fileName} - UndertaleModTool.WinUI";
+            title = $"{gameName} - {fileName} - UndertaleModTool WinUI Preview";
             if (_isDirty)
                 title = $"* {title}";
         }
