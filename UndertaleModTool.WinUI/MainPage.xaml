@@ -47,6 +47,12 @@
                         IsEnabled="False"
                         KeyboardAcceleratorTextOverride="Ctrl+Shift+S"
                         Text="Save as" />
+                    <MenuFlyoutItem
+                        x:Name="ExportToDeltamodCommunityMenuItem"
+                        Click="ExportToDeltamodCommunityMenuItem_Click"
+                        IsEnabled="False"
+                        Text="Export to Deltamod Community"
+                        Visibility="Collapsed" />
                     <MenuFlyoutSeparator />
                     <MenuFlyoutItem
                         x:Name="TempRunGameMenuItem"

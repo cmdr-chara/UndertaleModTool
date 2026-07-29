@@ -409,6 +409,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         UpdateWindowTitle();
         UpdateResourceCommandButtons();
         UpdateCommandStates();
+        UpdateDeltamodCommunityExportState();
         StatusBox.Text = "Created new data file.";
     }
 
@@ -524,19 +525,13 @@ public sealed partial class MainPage : Page, IScriptInterface
         if (string.IsNullOrWhiteSpace(path))
             return;
 
-        if (!IsSupportedDataFilePath(path))
+        if (!TryResolveStartupDataFilePath(path, out string? resolvedPath, out string validationError))
         {
-            StatusBox.Text = $"Startup file is not a supported GameMaker data file:{Environment.NewLine}{path}";
+            StatusBox.Text = $"{validationError}{Environment.NewLine}{path}";
             return;
         }
 
-        if (!File.Exists(path))
-        {
-            StatusBox.Text = $"Startup data file was not found:{Environment.NewLine}{path}";
-            return;
-        }
-
-        await OpenDataFileAsync(path);
+        await OpenDataFileAsync(resolvedPath!);
     }
 
     private async System.Threading.Tasks.Task OpenDataFileAsync(string path)
@@ -600,6 +595,7 @@ public sealed partial class MainPage : Page, IScriptInterface
             UpdateCommandStates();
             StatusBox.Text = loadedGame.Status;
             RememberOpenedFile(path);
+            UpdateDeltamodCommunityExportState();
         }
         catch (Exception ex)
         {
@@ -651,6 +647,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         HideEditors();
         UpdateGlobalToolsVisibility();
         UpdateResourceCommandButtons();
+        UpdateDeltamodCommunityExportState();
     }
 
     private async void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -759,6 +756,55 @@ public sealed partial class MainPage : Page, IScriptInterface
     private async void SaveAsButton_Click(object sender, RoutedEventArgs e)
     {
         await SaveCurrentFileAsAsync();
+    }
+
+    private async void ExportToDeltamodCommunityMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentFilePath is null || _data is null)
+            return;
+
+        if (_isDirty && !await SaveCurrentFileAsync())
+            return;
+
+        if (!await ShowConfirmationAsync(
+                "Export full game data",
+                "This creates a Community mod that replaces the complete GameMaker data file. " +
+                "Use it only with the same game version as this workspace. The managed installation is not changed now.",
+                "Export mod",
+                "Cancel"))
+        {
+            return;
+        }
+
+        ExportToDeltamodCommunityMenuItem.IsEnabled = false;
+        StatusBox.Text = "Preparing Deltamod Community package...";
+        try
+        {
+            DeltamodCommunityIntegration.CommunityExportResult result =
+                await DeltamodCommunityIntegration.ExportAsync(_currentFilePath);
+            StatusBox.Text =
+                $"Deltamod Community import requested.{Environment.NewLine}" +
+                $"Project: {result.ProjectDirectory}{Environment.NewLine}" +
+                $"SHA-256: {result.Sha256}";
+        }
+        catch (Exception ex)
+        {
+            StatusBox.Text = $"Community export failed:{Environment.NewLine}{ex.Message}";
+        }
+        finally
+        {
+            UpdateDeltamodCommunityExportState();
+        }
+    }
+
+    private void UpdateDeltamodCommunityExportState()
+    {
+        bool available = _data is not null &&
+                         !_data.UnsupportedBytecodeVersion &&
+                         DeltamodCommunityIntegration.CanExport(_currentFilePath);
+        ExportToDeltamodCommunityMenuItem.Visibility =
+            available ? Visibility.Visible : Visibility.Collapsed;
+        ExportToDeltamodCommunityMenuItem.IsEnabled = available;
     }
 
     private async void TempRunGameMenuItem_Click(object sender, RoutedEventArgs e)
@@ -1449,6 +1495,7 @@ public sealed partial class MainPage : Page, IScriptInterface
             StatusBox.Text = status;
             RefreshCategoriesPreservingSelection();
             RememberOpenedFile(file.Path);
+            UpdateDeltamodCommunityExportState();
             return true;
         }
         catch (Exception ex)
@@ -20353,6 +20400,43 @@ public sealed partial class MainPage : Page, IScriptInterface
                string.Equals(extension, ".ios", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(extension, ".unx", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(extension, ".droid", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static bool TryResolveStartupDataFilePath(
+        string path,
+        out string? resolvedPath,
+        out string validationError)
+    {
+        resolvedPath = null;
+        validationError = "Startup file is not a supported GameMaker data file:";
+
+        if (string.IsNullOrWhiteSpace(path) || !IsSupportedDataFilePath(path))
+            return false;
+
+        try
+        {
+            string fullPath = Path.GetFullPath(path.Trim().Trim('"'));
+            FileInfo file = new(fullPath);
+            if (!file.Exists)
+            {
+                validationError = "Startup data file was not found:";
+                return false;
+            }
+
+            if ((file.Attributes & System.IO.FileAttributes.ReparsePoint) != 0 || file.LinkTarget is not null)
+            {
+                validationError = "Startup data file cannot be a symbolic link or reparse point:";
+                return false;
+            }
+
+            resolvedPath = file.FullName;
+            return true;
+        }
+        catch (Exception ex) when (ex is ArgumentException or IOException or NotSupportedException or UnauthorizedAccessException)
+        {
+            validationError = $"Startup data file could not be validated ({ex.Message}):";
+            return false;
+        }
     }
 
     private bool NavigateToResource(string categoryLabel, int itemIndex, bool addTab = false)

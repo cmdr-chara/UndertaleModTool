@@ -10,6 +10,30 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        int communityExportSmokeIndex = Array.IndexOf(args, "--community-export-smoke");
+        if (communityExportSmokeIndex >= 0)
+        {
+            string? dataFilePath = StartupArguments.GetSupportedDataFileOptionValue(args, "--community-export-smoke");
+            int exitCode = 2;
+            if (dataFilePath is not null)
+            {
+                try
+                {
+                    DeltamodCommunityIntegration.ExportAsync(dataFilePath, dryRun: true)
+                        .GetAwaiter()
+                        .GetResult();
+                    exitCode = 0;
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex);
+                    exitCode = 1;
+                }
+            }
+            Environment.Exit(exitCode);
+            return;
+        }
+
         int referenceSmokeTestIndex = Array.IndexOf(args, "--reference-smoke");
         if (referenceSmokeTestIndex >= 0)
         {
@@ -54,7 +78,9 @@ internal static class Program
             return;
         }
 
-        StartupDataFilePath = StartupArguments.FindSupportedDataFilePath(args);
+        StartupDataFilePath =
+            StartupArguments.GetSupportedDataFileOptionValue(args, "--open") ??
+            StartupArguments.FindSupportedDataFilePath(args);
 
         WinRT.ComWrappersSupport.InitializeComWrappers();
         Application.Start(_ =>
