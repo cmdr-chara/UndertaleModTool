@@ -16,6 +16,7 @@ namespace UndertaleModTool_WinUI;
 public sealed partial class MainWindow : Window
 {
     private bool _isCloseConfirmed;
+    private Task<bool>? _closeConfirmationTask;
 
     public MainWindow(string? startupDataFilePath = null)
     {
@@ -74,7 +75,18 @@ public sealed partial class MainWindow : Window
             return;
 
         args.Cancel = true;
-        if (!await page.TryCloseAsync())
+        _closeConfirmationTask ??= page.TryCloseAsync();
+        bool confirmed;
+        try
+        {
+            confirmed = await _closeConfirmationTask;
+        }
+        finally
+        {
+            _closeConfirmationTask = null;
+        }
+
+        if (!confirmed || _isCloseConfirmed)
             return;
 
         _isCloseConfirmed = true;

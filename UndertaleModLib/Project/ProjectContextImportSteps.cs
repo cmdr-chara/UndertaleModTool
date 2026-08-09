@@ -92,7 +92,7 @@ partial class ProjectContext
             {
                 throw new ProjectException("Infinite sub-project recursion detected");
             }
-            ProjectContext subContext = new(LoadDirectory, SaveDirectory, subProjectPath)
+            ProjectContext subContext = new(LoadDirectory, SaveDirectory, subProjectPath, AllowScripts)
             {
                 _projectJsonPaths = _projectJsonPaths
             };

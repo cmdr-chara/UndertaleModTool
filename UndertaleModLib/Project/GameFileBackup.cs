@@ -76,7 +76,7 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
     /// <summary>
     /// Directory of the game files.
     /// </summary>
-    public string GameDirectory { get; set; } = gameDirectory;
+    public string GameDirectory { get; } = Path.GetFullPath(gameDirectory);
 
     /// <summary>
     /// Filename used for mod backup manifests.
@@ -121,6 +121,10 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
     /// </summary>
     private HashSet<string> _buildingBackupDirectoryPaths = null;
 
+    private static readonly StringComparer PathComparer = OperatingSystem.IsWindows()
+        ? StringComparer.OrdinalIgnoreCase
+        : StringComparer.Ordinal;
+
     /// <inheritdoc/>
     public void RestoreFiles()
     {
@@ -131,7 +135,8 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
         }
 
         // Load manifest JSON
-        string manifestPath = Path.Join(GameDirectory, ManifestFilename);
+        Paths.VerifyNoReparsePoints(GameDirectory, GameDirectory);
+        string manifestPath = Paths.JoinVerifyWithinDirectory(GameDirectory, ManifestFilename);
         if (!File.Exists(manifestPath))
         {
             // Nothing to restore
@@ -310,7 +315,7 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
             string backupDirName = DefaultBackupDirectoryName;
             string backupDirPath = Path.Join(GameDirectory, backupDirName);
             int loopCounter = 0;
-            while (Directory.Exists(backupDirName))
+            while (File.Exists(backupDirPath) || Directory.Exists(backupDirPath))
             {
                 if (loopCounter >= 50)
                 {
@@ -328,8 +333,8 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
                 Files = [],
                 Directories = []
             };
-            _buildingBackupFilePaths = [];
-            _buildingBackupDirectoryPaths = [];
+            _buildingBackupFilePaths = new(PathComparer);
+            _buildingBackupDirectoryPaths = new(PathComparer);
         }
         catch
         {
@@ -345,6 +350,8 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
     /// <inheritdoc/>
     public void BackupFile(string path)
     {
+        path = Path.GetFullPath(path);
+        Paths.VerifyWithinDirectory(GameDirectory, path);
         InitializeManifest();
 
         // Ensure we haven't added this path more than once, to avoid errors.
@@ -407,6 +414,8 @@ public sealed class GameFileBackup(string gameDirectory) : IGameFileBackup
     /// <inheritdoc/>
     public void BackupDirectory(string path, bool creating)
     {
+        path = Path.GetFullPath(path);
+        Paths.VerifyWithinDirectory(GameDirectory, path);
         InitializeManifest();
 
         // Ensure we haven't added this path more than once, to avoid errors.

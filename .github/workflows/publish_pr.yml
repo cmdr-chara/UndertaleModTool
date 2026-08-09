@@ -8,6 +8,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  verify:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        submodules: true
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+    - name: Build WinUI and CLI
+      run: |
+        dotnet build UndertaleModTool.WinUI/UndertaleModTool.WinUI.csproj -c Debug
+        dotnet build UndertaleModCli/UndertaleModCli.csproj -c Debug
+    - name: Run tests
+      run: |
+        dotnet test UndertaleModLibTests/UndertaleModLibTests.csproj -c Debug
+        dotnet test UndertaleModTests/UndertaleModTests.csproj -c Debug
+
   build_gui:
 
     strategy:

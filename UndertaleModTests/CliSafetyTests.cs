@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using UndertaleModLib;
 using UndertaleModLib.Util;
 
 namespace UndertaleModTests
@@ -111,6 +115,72 @@ namespace UndertaleModTests
 
             Assert.IsFalse(File.Exists(marker));
             Assert.IsFalse(diagnostics.Any(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+        }
+
+        [TestMethod]
+        [DataRow(false)]
+        [DataRow(true)]
+        public void NewStdoutContainsOnlyAValidDataFile(bool verbose)
+        {
+            List<string> arguments = ["new", "--stdout"];
+            if (verbose)
+                arguments.Add("--verbose");
+
+            (int exitCode, byte[] stdout, string stderr) = RunCli(arguments);
+
+            Assert.AreEqual(0, exitCode, stderr);
+            Assert.IsGreaterThan(0, stdout.Length);
+            using MemoryStream stream = new(stdout);
+            Assert.IsNotNull(UndertaleIO.Read(stream));
+            if (verbose)
+                StringAssert.Contains(stderr, "stdout");
+            else
+                Assert.AreEqual("", stderr);
+        }
+
+        [TestMethod]
+        public void DumpMissingCodeReturnsFailureWithoutStdoutNoise()
+        {
+            string directory = Path.Combine(Path.GetTempPath(), $"umt-dump-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            string dataPath = Path.Combine(directory, "data.win");
+            try
+            {
+                Assert.AreEqual(0, UndertaleModCli.Program.Main(["new", "--output", dataPath]));
+
+                (int exitCode, byte[] stdout, string stderr) = RunCli(
+                    ["dump", dataPath, "--code", "missing_entry", "--output", directory]);
+
+                Assert.AreEqual(1, exitCode);
+                Assert.HasCount(0, stdout);
+                Assert.IsNotEmpty(stderr);
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        private static (int ExitCode, byte[] Stdout, string Stderr) RunCli(IEnumerable<string> arguments)
+        {
+            string dotnetHost = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") ?? "dotnet";
+            ProcessStartInfo startInfo = new(dotnetHost)
+            {
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false
+            };
+            startInfo.ArgumentList.Add(typeof(UndertaleModCli.Program).Assembly.Location);
+            foreach (string argument in arguments)
+                startInfo.ArgumentList.Add(argument);
+
+            using Process process = Process.Start(startInfo) ?? throw new InvalidOperationException("Could not start the CLI process.");
+            using MemoryStream stdout = new();
+            Task stdoutTask = process.StandardOutput.BaseStream.CopyToAsync(stdout);
+            Task<string> stderrTask = process.StandardError.ReadToEndAsync();
+            process.WaitForExit();
+            Task.WaitAll(stdoutTask, stderrTask);
+            return (process.ExitCode, stdout.ToArray(), stderrTask.Result.Trim());
         }
     }
 }

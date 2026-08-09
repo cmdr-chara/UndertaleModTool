@@ -35,7 +35,7 @@ public sealed partial class ProjectContext
     /// <remarks>
     /// This can be disabled as one layer of a security measure, but projects should already be trusted/audited before importing.
     /// </remarks>
-    public bool AllowScripts { get; } = true;
+    public bool AllowScripts { get; }
 
     /// <summary>
     /// Current directory associated with loading data for this project. Must always be set.
@@ -153,13 +153,15 @@ public sealed partial class ProjectContext
     /// <param name="loadDirectory">Path of the directory for game data to be loaded from.</param>
     /// <param name="saveDirectory">Path of the directory for game data to be saved to.</param>
     /// <param name="mainFilePath">Main file path for the project.</param>
-    private ProjectContext(string loadDirectory, string saveDirectory, string mainFilePath)
+    /// <param name="allowScripts">Whether trusted project scripts may execute during import.</param>
+    private ProjectContext(string loadDirectory, string saveDirectory, string mainFilePath, bool allowScripts)
     {
         Data = null;
         LoadDirectory = Path.GetFullPath(loadDirectory);
         SaveDirectory = Path.GetFullPath(saveDirectory);
-        MainFilePath = mainFilePath;
+        MainFilePath = Path.GetFullPath(mainFilePath);
         MainDirectory = Path.GetFullPath(Path.GetDirectoryName(MainFilePath));
+        AllowScripts = allowScripts;
     }
 
     /// <summary>
@@ -168,9 +170,10 @@ public sealed partial class ProjectContext
     /// <param name="loadDirectory">Path of the directory for game data to be loaded from.</param>
     /// <param name="saveDirectory">Path of the directory for game data to be saved to.</param>
     /// <param name="mainFilePath">Main file path for the project.</param>
-    public static ProjectContext CreateWithDirectories(string loadDirectory, string saveDirectory, string mainFilePath)
+    /// <param name="allowScripts">Whether trusted project scripts may execute during import.</param>
+    public static ProjectContext CreateWithDirectories(string loadDirectory, string saveDirectory, string mainFilePath, bool allowScripts = false)
     {
-        return new ProjectContext(loadDirectory, saveDirectory, mainFilePath);
+        return new ProjectContext(loadDirectory, saveDirectory, mainFilePath, allowScripts);
     }
 
     /// <summary>
@@ -179,9 +182,10 @@ public sealed partial class ProjectContext
     /// <param name="loadPath">Path of the data file for game data to be loaded from.</param>
     /// <param name="savePath">Path of the data file for game data to be saved to.</param>
     /// <param name="mainFilePath">Main file path for the project.</param>
-    public static ProjectContext CreateWithDataFilePaths(string loadPath, string savePath, string mainFilePath)
+    /// <param name="allowScripts">Whether trusted project scripts may execute during import.</param>
+    public static ProjectContext CreateWithDataFilePaths(string loadPath, string savePath, string mainFilePath, bool allowScripts = false)
     {
-        return new ProjectContext(Path.GetDirectoryName(loadPath), Path.GetDirectoryName(savePath), mainFilePath)
+        return new ProjectContext(Path.GetDirectoryName(loadPath), Path.GetDirectoryName(savePath), mainFilePath, allowScripts)
         {
             LoadDataPath = Path.GetFullPath(loadPath),
             SaveDataPath = Path.GetFullPath(savePath)
@@ -206,21 +210,21 @@ public sealed partial class ProjectContext
                           string newProjectName, Action<Action> mainThreadAction = null)
     {
         Data = currentData;
-        LoadDataPath = loadedDataPath;
-        SaveDataPath = savingDataPath;
+        LoadDataPath = Path.GetFullPath(loadedDataPath);
+        SaveDataPath = Path.GetFullPath(savingDataPath);
         LoadDirectory = Path.GetFullPath(Path.GetDirectoryName(loadedDataPath));
         SaveDirectory = Path.GetFullPath(Path.GetDirectoryName(savingDataPath));
-        MainFilePath = mainFilePath;
+        MainFilePath = Path.GetFullPath(mainFilePath);
         if (mainThreadAction is not null)
         {
             MainThreadAction = mainThreadAction;
         }
-        MainDirectory = Path.GetFullPath(Path.GetDirectoryName(mainFilePath));
+        MainDirectory = Path.GetFullPath(Path.GetDirectoryName(MainFilePath));
 
         // If the file already exists, we cannot overwrite it (give a friendly message)
-        if (File.Exists(mainFilePath))
+        if (File.Exists(MainFilePath))
         {
-            throw new ProjectException($"Project file already exists at \"{mainFilePath}\"");
+            throw new ProjectException($"Project file already exists at \"{MainFilePath}\"");
         }
 
         // If the directory isn't empty, we don't want to overwrite anything else accidentally
@@ -235,7 +239,7 @@ public sealed partial class ProjectContext
         {
             Name = newProjectName
         };
-        using FileStream fs = new(mainFilePath, FileMode.CreateNew);
+        using FileStream fs = new(MainFilePath, FileMode.CreateNew);
         JsonSerializer.Serialize(fs, _mainOptions, JsonOptions);
     }
 
@@ -269,6 +273,7 @@ public sealed partial class ProjectContext
         }
 
         // Load options
+        Paths.VerifyWithinDirectory(MainDirectory, MainFilePath);
         using (FileStream fs = new(MainFilePath, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             _mainOptions = JsonSerializer.Deserialize<ProjectMainOptions>(fs, JsonOptions);

@@ -27,10 +27,6 @@ partial class ProjectContext
     /// </summary>
     private void InitializeScripting()
     {
-        if (!AllowScripts)
-        {
-            throw new ProjectException("Attempted to run scripts, which has been disallowed");
-        }
         if (_scriptOptions is not null)
         {
             return;
@@ -52,6 +48,10 @@ partial class ProjectContext
     private void RunScriptList(List<string> relativePathList)
     {
         if (relativePathList.Count == 0)
+        {
+            return;
+        }
+        if (!AllowScripts)
         {
             return;
         }

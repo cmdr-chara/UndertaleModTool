@@ -23,7 +23,10 @@ public static class Paths
             fullDirectoryPath += Path.DirectorySeparatorChar;
         }
         string fullPathToTest = Path.GetFullPath(pathToTest);
-        return fullPathToTest.StartsWith(fullDirectoryPath, StringComparison.Ordinal);
+        StringComparison comparison = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        return fullPathToTest.StartsWith(fullDirectoryPath, comparison);
     }
 
     /// <summary>
@@ -37,6 +40,41 @@ public static class Paths
         if (!IsWithinDirectory(directory, pathToTest))
         {
             throw new Exception($"Path escapes its root directory ({pathToTest})");
+        }
+        VerifyNoReparsePoints(directory, pathToTest);
+    }
+
+    /// <summary>
+    /// Rejects existing symbolic links, junctions, and other reparse points between a root and target path.
+    /// </summary>
+    public static void VerifyNoReparsePoints(string directory, string pathToTest)
+    {
+        string fullDirectoryPath = Path.GetFullPath(directory);
+        string fullPathToTest = Path.GetFullPath(pathToTest);
+
+        VerifyNotReparsePoint(fullDirectoryPath);
+        string relativePath = Path.GetRelativePath(fullDirectoryPath, fullPathToTest);
+        string currentPath = fullDirectoryPath;
+        foreach (string component in relativePath.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar],
+                                                         StringSplitOptions.RemoveEmptyEntries))
+        {
+            currentPath = Path.Join(currentPath, component);
+            VerifyNotReparsePoint(currentPath);
+        }
+    }
+
+    private static void VerifyNotReparsePoint(string path)
+    {
+        try
+        {
+            if (File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint))
+                throw new IOException($"Path contains a symbolic link or junction ({path})");
+        }
+        catch (FileNotFoundException)
+        {
+        }
+        catch (DirectoryNotFoundException)
+        {
         }
     }
 
@@ -85,6 +123,14 @@ public static class Paths
         {
             return null;
         }
+        try
+        {
+            VerifyNoReparsePoints(directory, joined);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
         return joined;
     }
 
@@ -100,6 +146,14 @@ public static class Paths
         {
             return null;
         }
+        try
+        {
+            VerifyNoReparsePoints(directory, joined);
+        }
+        catch (IOException)
+        {
+            return null;
+        }
         return joined;
     }
 
@@ -112,6 +166,14 @@ public static class Paths
     {
         string joined = Path.Join(directory, path1, path2, path3);
         if (!IsWithinDirectory(directory, joined))
+        {
+            return null;
+        }
+        try
+        {
+            VerifyNoReparsePoints(directory, joined);
+        }
+        catch (IOException)
         {
             return null;
         }

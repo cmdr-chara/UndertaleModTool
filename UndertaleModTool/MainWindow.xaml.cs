@@ -3972,6 +3972,15 @@ result in loss of work.");
                 return;
             }
 
+            bool allowScripts = MessageBox.Show(
+                this,
+                $"Project scripts are arbitrary C# code and can access your files and programs.\n\n" +
+                $"Only allow scripts if you trust this project:\n{openProjectDialog.FileName}\n\nAllow project scripts?",
+                "Trust project scripts?",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning,
+                MessageBoxResult.No) == MessageBoxResult.Yes;
+
             // Load data file if needed
             if (dataFilePathToLoad is not null)
             {
@@ -3995,7 +4004,8 @@ result in loss of work.");
             {
                 try
                 {
-                    newProjectContext = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, openProjectDialog.FileName);
+                    newProjectContext = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath,
+                                                                               openProjectDialog.FileName, allowScripts);
                     newProjectContext.Import(Data, null, (f) => Dispatcher.Invoke(f));
                 }
                 catch (ProjectException ex)

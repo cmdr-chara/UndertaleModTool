@@ -26,4 +26,9 @@ public class ProjectBuildOptions
     /// Determines if Cli should print out verbose logs
     /// </summary>
     public bool Verbose { get; set; } = false;
+
+    /// <summary>
+    /// Allows the project to execute arbitrary C# scripts during import.
+    /// </summary>
+    public bool AllowScripts { get; set; }
 }

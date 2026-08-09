@@ -279,13 +279,18 @@ public partial class Program : IScriptInterface
         };
         Option<FileInfo> projectBuildSourceOption = new("-s", "--source") { Description = "Source data file", Required = true };
         Option<FileInfo> projectBuildDestinationOption = new("-d", "--destination") { Description = "Destination data file", Required = true };
+        Option<bool> projectBuildAllowScriptsOption = new("--allow-scripts")
+        {
+            Description = "Allow this trusted project to execute arbitrary C# scripts"
+        };
 
         Command projectBuildCommand = new("build", "Build a project")
         {
             projectBuildFileArgument,
             verboseOption,
             projectBuildSourceOption,
-            projectBuildDestinationOption
+            projectBuildDestinationOption,
+            projectBuildAllowScriptsOption
         };
 
         projectBuildCommand.SetAction(parseResult =>
@@ -295,7 +300,8 @@ public partial class Program : IScriptInterface
                 ProjectFile = parseResult.GetValue(projectBuildFileArgument),
                 Verbose = parseResult.GetValue(verboseOption),
                 Source = parseResult.GetValue(projectBuildSourceOption),
-                Destination = parseResult.GetValue(projectBuildDestinationOption)
+                Destination = parseResult.GetValue(projectBuildDestinationOption),
+                AllowScripts = parseResult.GetValue(projectBuildAllowScriptsOption)
             });
         });
 
@@ -418,7 +424,8 @@ public partial class Program : IScriptInterface
         Console.OutputEncoding = Console.InputEncoding;
 
 
-        Console.WriteLine($"Trying to load file: '{datafile.FullName}'");
+        if (verbose)
+            Console.Error.WriteLine($"Trying to load file: '{datafile.FullName}'");
 
         this.FilePath = datafile.FullName;
         this.ExePath = Environment.CurrentDirectory;
@@ -436,15 +443,16 @@ public partial class Program : IScriptInterface
     {
         if (datafile == null) throw new ArgumentNullException(nameof(datafile));
 
-        Console.WriteLine($"Trying to load file: '{datafile.FullName}'");
         this.Verbose = verbose;
+        if (verbose)
+            Console.Error.WriteLine($"Trying to load file: '{datafile.FullName}'");
         this.FilePath = datafile.FullName;
         this.ExePath = Environment.CurrentDirectory;
         this.Data = ReadDataFile(datafile, verbose ? WarningHandler : DummyWarningHandler, verbose ? MessageHandler : DummyHandler);
         this.Output = output ?? new DirectoryInfo(datafile.DirectoryName);
 
         if (this.Verbose)
-            Console.WriteLine("Output directory has been set to " + this.Output.FullName);
+            Console.Error.WriteLine("Output directory has been set to " + this.Output.FullName);
     }
 
     /// <summary>
@@ -671,8 +679,8 @@ public partial class Program : IScriptInterface
         int parallelFailures = 0;
         if (program.Data.IsYYC() && requestedCodeDump)
         {
-            Console.WriteLine("The game was made with YYC (YoYo Compiler), which means that the code was compiled into the executable. " +
-                              "There is thus no code to dump.");
+            Console.Error.WriteLine("The game was made with YYC (YoYo Compiler), which means that the code was compiled into the executable. " +
+                                    "There is thus no code to dump.");
             successful = false;
         }
 
@@ -895,7 +903,8 @@ public partial class Program : IScriptInterface
             if (program.Verbose)
                 Console.WriteLine($"Loading project file '{options.ProjectFile.FullName}'");
 
-            newProjectContext = ProjectContext.CreateWithDataFilePaths(options.Source.FullName, options.Destination.FullName, options.ProjectFile.FullName);
+            newProjectContext = ProjectContext.CreateWithDataFilePaths(options.Source.FullName, options.Destination.FullName,
+                                                                        options.ProjectFile.FullName, options.AllowScripts);
 
             if (program.Verbose)
                 Console.WriteLine($"Importing project into source data file");

@@ -18,6 +18,7 @@ public sealed class WinUiToolSettings
     private const string DefaultInstanceIdPrefix = "inst_";
 
     private static bool _isLoaded;
+    private static readonly object SaveGate = new();
 
     public static WinUiToolSettings Instance { get; private set; } = new();
 
@@ -98,20 +99,44 @@ public sealed class WinUiToolSettings
 
     public static bool TrySave([NotNullWhen(false)] out string? error)
     {
-        EnsureLoaded();
-        try
+        lock (SaveGate)
         {
-            Directory.CreateDirectory(AppDataFolder);
-            string path = Path.Join(AppDataFolder, SettingsFileName);
-            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(Instance, JsonOptions);
-            File.WriteAllBytes(path, bytes);
-            error = null;
-            return true;
-        }
-        catch (Exception ex)
-        {
-            error = ex.Message;
-            return false;
+            EnsureLoaded();
+            string? tempPath = null;
+            try
+            {
+                Directory.CreateDirectory(AppDataFolder);
+                string path = Path.Join(AppDataFolder, SettingsFileName);
+                tempPath = Path.Join(AppDataFolder, $".{SettingsFileName}.{Guid.NewGuid():N}.tmp");
+                byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(Instance, JsonOptions);
+                using (FileStream stream = new(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                {
+                    stream.Write(bytes);
+                    stream.Flush(flushToDisk: true);
+                }
+                File.Move(tempPath, path, overwrite: true);
+                tempPath = null;
+                error = null;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                error = ex.Message;
+                return false;
+            }
+            finally
+            {
+                if (tempPath is not null)
+                {
+                    try
+                    {
+                        File.Delete(tempPath);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
         }
     }
 }

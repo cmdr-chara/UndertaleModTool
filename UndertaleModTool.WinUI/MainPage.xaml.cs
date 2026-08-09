@@ -100,6 +100,9 @@ public sealed partial class MainPage : Page, IScriptInterface
     private string? _lastAppliedResourceFilter;
     private IReadOnlyList<ResourceItem>? _lastFilteredResourceItems;
     private bool _isDirty;
+    private bool _isDocumentTransition;
+    private System.Threading.Tasks.Task<bool>? _saveTask;
+    private System.Threading.Tasks.Task<bool>? _saveAsTask;
     private bool _isUpdatingOpenResourceTabs;
     private bool _isNavigatingResourceHistory;
     private int _resourceNavigationHistoryPosition = -1;
@@ -323,48 +326,83 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private async System.Threading.Tasks.Task PickAndOpenDataFileAsync()
     {
-        FileOpenPicker picker = new()
+        if (!TryBeginDocumentTransition())
+            return;
+        try
         {
-            SuggestedStartLocation = PickerLocationId.DocumentsLibrary
-        };
-        picker.FileTypeFilter.Add(".win");
-        picker.FileTypeFilter.Add(".ios");
-        picker.FileTypeFilter.Add(".unx");
-        picker.FileTypeFilter.Add(".droid");
+            FileOpenPicker picker = new()
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+            };
+            picker.FileTypeFilter.Add(".win");
+            picker.FileTypeFilter.Add(".ios");
+            picker.FileTypeFilter.Add(".unx");
+            picker.FileTypeFilter.Add(".droid");
 
-        if (App.MainWindow is not null)
-        {
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+            if (App.MainWindow is not null)
+            {
+                InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(App.MainWindow));
+            }
+
+            Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
+            if (file is null)
+                return;
+
+            if (!await ConfirmReplacingCurrentDataAsync())
+                return;
+
+            await OpenDataFileAsync(file.Path);
         }
-
-        Windows.Storage.StorageFile? file = await picker.PickSingleFileAsync();
-        if (file is null)
-            return;
-
-        if (!await ConfirmReplacingCurrentDataAsync())
-            return;
-
-        await OpenDataFileAsync(file.Path);
+        finally
+        {
+            EndDocumentTransition();
+        }
     }
 
     private async System.Threading.Tasks.Task<bool> CreateNewDataFileAsync()
     {
-        if (!await ConfirmReplacingCurrentDataAsync())
+        if (!TryBeginDocumentTransition())
             return false;
-
-        UndertaleData data;
         try
         {
-            data = await System.Threading.Tasks.Task.Run(UndertaleData.CreateNew);
-        }
-        catch (Exception ex)
-        {
-            StatusBox.Text = $"Could not create a new data file:{Environment.NewLine}{ex}";
-            return false;
-        }
+            if (!await ConfirmReplacingCurrentDataAsync())
+                return false;
 
-        CreateNewDataFileCore(data);
+            UndertaleData data;
+            try
+            {
+                data = await System.Threading.Tasks.Task.Run(UndertaleData.CreateNew);
+            }
+            catch (Exception ex)
+            {
+                StatusBox.Text = $"Could not create a new data file:{Environment.NewLine}{ex}";
+                return false;
+            }
+
+            CreateNewDataFileCore(data);
+            return true;
+        }
+        finally
+        {
+            EndDocumentTransition();
+        }
+    }
+
+    private bool TryBeginDocumentTransition()
+    {
+        if (_isDocumentTransition)
+            return false;
+        _isDocumentTransition = true;
+        OpenButton.IsEnabled = false;
+        UpdateCommandStates();
         return true;
+    }
+
+    private void EndDocumentTransition()
+    {
+        _isDocumentTransition = false;
+        OpenButton.IsEnabled = true;
+        UpdateCommandStates();
     }
 
     private void CreateNewDataFileCore(UndertaleData data)
@@ -415,6 +453,9 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     public async System.Threading.Tasks.Task<bool> TryCloseAsync()
     {
+        if (_isDocumentTransition)
+            return false;
+
         if (!WinUiToolSettings.Instance.WarnOnClose)
             return await ConfirmDiscardProjectAssetsAsync(
                 "Project currently open",
@@ -468,11 +509,15 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private async System.Threading.Tasks.Task OpenRecentPathAsync(string? path)
     {
-        if (string.IsNullOrWhiteSpace(path))
-        {
-            StatusBox.Text = "No recent data file is available.";
+        if (!TryBeginDocumentTransition())
             return;
-        }
+        try
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                StatusBox.Text = "No recent data file is available.";
+                return;
+            }
 
         if (!File.Exists(path))
         {
@@ -488,7 +533,12 @@ public sealed partial class MainPage : Page, IScriptInterface
         if (!await ConfirmReplacingCurrentDataAsync())
             return;
 
-        await OpenDataFileAsync(path);
+            await OpenDataFileAsync(path);
+        }
+        finally
+        {
+            EndDocumentTransition();
+        }
     }
 
     private void NoDataDropZone_DragOver(object sender, DragEventArgs e)
@@ -502,8 +552,12 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private async void NoDataDropZone_Drop(object sender, DragEventArgs e)
     {
-        if (!e.DataView.Contains(StandardDataFormats.StorageItems))
+        if (!TryBeginDocumentTransition())
             return;
+        try
+        {
+            if (!e.DataView.Contains(StandardDataFormats.StorageItems))
+                return;
 
         IReadOnlyList<IStorageItem> items = await e.DataView.GetStorageItemsAsync();
         StorageFile? file = items.OfType<StorageFile>()
@@ -517,7 +571,12 @@ public sealed partial class MainPage : Page, IScriptInterface
         if (!await ConfirmReplacingCurrentDataAsync())
             return;
 
-        await OpenDataFileAsync(file.Path);
+            await OpenDataFileAsync(file.Path);
+        }
+        finally
+        {
+            EndDocumentTransition();
+        }
     }
 
     internal async System.Threading.Tasks.Task OpenInitialDataFileAsync(string path)
@@ -659,6 +718,22 @@ public sealed partial class MainPage : Page, IScriptInterface
     }
 
     private async System.Threading.Tasks.Task<bool> SaveCurrentFileAsync()
+    {
+        if (_saveTask is not null)
+            return await _saveTask;
+
+        _saveTask = SaveCurrentFileCoreAsync();
+        try
+        {
+            return await _saveTask;
+        }
+        finally
+        {
+            _saveTask = null;
+        }
+    }
+
+    private async System.Threading.Tasks.Task<bool> SaveCurrentFileCoreAsync()
     {
         if (!_isDirty || _data is null || _data.UnsupportedBytecodeVersion)
             return true;
@@ -1452,6 +1527,22 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private async System.Threading.Tasks.Task<bool> SaveCurrentFileAsAsync()
     {
+        if (_saveAsTask is not null)
+            return await _saveAsTask;
+
+        _saveAsTask = SaveCurrentFileAsCoreAsync();
+        try
+        {
+            return await _saveAsTask;
+        }
+        finally
+        {
+            _saveAsTask = null;
+        }
+    }
+
+    private async System.Threading.Tasks.Task<bool> SaveCurrentFileAsCoreAsync()
+    {
         if (_data is null || _data.UnsupportedBytecodeVersion)
             return false;
 
@@ -1752,33 +1843,35 @@ public sealed partial class MainPage : Page, IScriptInterface
         }
 
         bool oldDisableDebuggerState = generalInfo.IsDebuggerDisabled;
-        generalInfo.IsDebuggerDisabled = false;
-        MarkDirty(markProjectAsset: false);
-
-        bool saveOk = await SaveCurrentFileAsync();
-        if (!saveOk)
-        {
-            generalInfo.IsDebuggerDisabled = oldDisableDebuggerState;
-            StatusBox.Text = "You must save your changes to run under the debugger.";
-            return;
-        }
-
-        string runDataFilePath = GetRunnableDataFilePath();
-        RuntimeCandidate? runtime = await PickRuntimeAsync(runDataFilePath, _data, requireDebugger: true);
-        generalInfo.IsDebuggerDisabled = oldDisableDebuggerState;
-        if (runtime is null)
-            return;
-
-        if (runtime.DebuggerPath is null)
-        {
-            StatusBox.Text = "The selected runtime does not support debugging.";
-            return;
-        }
-
-        string tempProject = Path.ChangeExtension(Path.GetTempFileName(), ".gmx");
+        bool savedWithDebuggerEnabled = false;
         try
         {
-            File.WriteAllText(tempProject, """
+            generalInfo.IsDebuggerDisabled = false;
+            MarkDirty(markProjectAsset: false);
+
+            bool saveOk = await SaveCurrentFileAsync();
+            if (!saveOk)
+            {
+                StatusBox.Text = "You must save your changes to run under the debugger.";
+                return;
+            }
+            savedWithDebuggerEnabled = true;
+
+            string runDataFilePath = GetRunnableDataFilePath();
+            RuntimeCandidate? runtime = await PickRuntimeAsync(runDataFilePath, _data, requireDebugger: true);
+            if (runtime is null)
+                return;
+
+            if (runtime.DebuggerPath is null)
+            {
+                StatusBox.Text = "The selected runtime does not support debugging.";
+                return;
+            }
+
+            string tempProject = Path.ChangeExtension(Path.GetTempFileName(), ".gmx");
+            try
+            {
+                File.WriteAllText(tempProject, """
 <!-- Without this file the debugger crashes, but it doesn't actually need to contain anything. -->
 <assets>
   <Configs name="configs">
@@ -1800,25 +1893,32 @@ public sealed partial class MainPage : Page, IScriptInterface
 </assets>
 """);
 
-            ProcessStartInfo runnerStartInfo = new(runtime.Path);
-            runnerStartInfo.ArgumentList.Add("-game");
-            runnerStartInfo.ArgumentList.Add(runDataFilePath);
-            runnerStartInfo.ArgumentList.Add("-debugoutput");
-            runnerStartInfo.ArgumentList.Add(Path.ChangeExtension(runDataFilePath, ".gamelog.txt"));
-            Process.Start(runnerStartInfo);
+                ProcessStartInfo runnerStartInfo = new(runtime.Path);
+                runnerStartInfo.ArgumentList.Add("-game");
+                runnerStartInfo.ArgumentList.Add(runDataFilePath);
+                runnerStartInfo.ArgumentList.Add("-debugoutput");
+                runnerStartInfo.ArgumentList.Add(Path.ChangeExtension(runDataFilePath, ".gamelog.txt"));
+                Process.Start(runnerStartInfo);
 
-            ProcessStartInfo debuggerStartInfo = new(runtime.DebuggerPath);
-            debuggerStartInfo.ArgumentList.Add($"-d={Path.ChangeExtension(runDataFilePath, ".yydebug")}");
-            debuggerStartInfo.ArgumentList.Add("-t=127.0.0.1");
-            debuggerStartInfo.ArgumentList.Add($"-tp={generalInfo.DebuggerPort}");
-            debuggerStartInfo.ArgumentList.Add($"-p={tempProject}");
-            Process.Start(debuggerStartInfo);
+                ProcessStartInfo debuggerStartInfo = new(runtime.DebuggerPath);
+                debuggerStartInfo.ArgumentList.Add($"-d={Path.ChangeExtension(runDataFilePath, ".yydebug")}");
+                debuggerStartInfo.ArgumentList.Add("-t=127.0.0.1");
+                debuggerStartInfo.ArgumentList.Add($"-tp={generalInfo.DebuggerPort}");
+                debuggerStartInfo.ArgumentList.Add($"-p={tempProject}");
+                Process.Start(debuggerStartInfo);
 
-            StatusBox.Text = $"Started {runtime.Version} with GMS debugger.";
+                StatusBox.Text = $"Started {runtime.Version} with GMS debugger.";
+            }
+            catch (Exception ex)
+            {
+                StatusBox.Text = $"Debugger run failed:{Environment.NewLine}{ex}";
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            StatusBox.Text = $"Debugger run failed:{Environment.NewLine}{ex}";
+            generalInfo.IsDebuggerDisabled = oldDisableDebuggerState;
+            if (savedWithDebuggerEnabled && oldDisableDebuggerState)
+                MarkDirty(markProjectAsset: false);
         }
     }
 
@@ -2073,6 +2173,13 @@ public sealed partial class MainPage : Page, IScriptInterface
         if (projectFile is null)
             return;
 
+        bool allowScripts = await ShowConfirmationAsync(
+            "Trust project scripts?",
+            $"Project scripts are arbitrary C# code and can access your files and programs.{Environment.NewLine}{Environment.NewLine}" +
+            $"Only allow scripts if you trust this project:{Environment.NewLine}{projectFile.Path}",
+            "Allow scripts",
+            "Keep disabled");
+
         string? dataFilePathToLoad = null;
         if (_data is null || _currentFilePath is null)
         {
@@ -2108,7 +2215,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         {
             ProjectContext project = await System.Threading.Tasks.Task.Run(() =>
             {
-                ProjectContext loadedProject = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, projectFile.Path);
+                ProjectContext loadedProject = ProjectContext.CreateWithDataFilePaths(loadFilePath, saveFilePath, projectFile.Path, allowScripts);
                 loadedProject.Import(data, null, RunOnUiThreadBlocking);
                 return loadedProject;
             });
@@ -4082,21 +4189,29 @@ public sealed partial class MainPage : Page, IScriptInterface
     {
         WinUiToolSettings.EnsureLoaded();
         StringBuilder status = new();
-        FileStream stream = File.OpenRead(path);
-        UndertaleData data = UndertaleIO.Read(stream, (warning, important) =>
+        UndertaleData? data = null;
+        try
         {
-            status.Append(important ? "[important] " : "[warning] ");
-            status.AppendLine(warning);
-        });
-        stream.Dispose();
-        ApplySettingsToData(data);
+            using FileStream stream = File.OpenRead(path);
+            data = UndertaleIO.Read(stream, (warning, important) =>
+            {
+                status.Append(important ? "[important] " : "[warning] ");
+                status.AppendLine(warning);
+            });
+            ApplySettingsToData(data);
 
-        string gameName = FormatTitle(data.GeneralInfo?.Name?.Content ?? "Unknown game");
-        status.Insert(0, $"Loaded {gameName}{Environment.NewLine}{path}{Environment.NewLine}{Environment.NewLine}");
+            string gameName = FormatTitle(data.GeneralInfo?.Name?.Content ?? "Unknown game");
+            status.Insert(0, $"Loaded {gameName}{Environment.NewLine}{path}{Environment.NewLine}{Environment.NewLine}");
 
-        IReadOnlyList<ResourceCategory> categories = BuildCategories(data);
+            IReadOnlyList<ResourceCategory> categories = BuildCategories(data);
 
-        return new LoadedGame(data, gameName, categories, status.ToString());
+            return new LoadedGame(data, gameName, categories, status.ToString());
+        }
+        catch
+        {
+            data?.Dispose();
+            throw;
+        }
     }
 
     private static void ApplySettingsToData(UndertaleData data)
@@ -4118,17 +4233,20 @@ public sealed partial class MainPage : Page, IScriptInterface
     private static string SaveGame(string path, UndertaleData data)
     {
         StringBuilder status = new();
-        string tempPath = path + "temp";
+        string fullPath = Path.GetFullPath(path);
+        string directory = Path.GetDirectoryName(fullPath) ?? Environment.CurrentDirectory;
+        Directory.CreateDirectory(directory);
+        string tempPath = Path.Join(directory, $".{Path.GetFileName(fullPath)}.{Guid.NewGuid():N}.tmp");
 
         try
         {
-            using (FileStream stream = new(tempPath, FileMode.Create, FileAccess.Write))
+            using (FileStream stream = new(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
             {
                 UndertaleIO.Write(stream, data, message => status.AppendLine(message));
             }
 
-            File.Move(tempPath, path, true);
-            status.Insert(0, $"Saved {path}{Environment.NewLine}{Environment.NewLine}");
+            File.Move(tempPath, fullPath, true);
+            status.Insert(0, $"Saved {fullPath}{Environment.NewLine}{Environment.NewLine}");
             return status.ToString();
         }
         catch

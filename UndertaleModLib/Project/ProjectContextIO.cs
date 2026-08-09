@@ -18,6 +18,8 @@ partial class ProjectContext
         {
             throw new DirectoryNotFoundException(sourceInfo.FullName);
         }
+        Paths.VerifyNoReparsePoints(MainDirectory, sourceInfo.FullName);
+        Paths.VerifyWithinDirectory(SaveDirectory, destPath);
 
         // Make sure destination directory is created
         if (!Directory.Exists(destPath))
@@ -33,6 +35,8 @@ partial class ProjectContext
             {
                 continue;
             }
+            if (sourceFileInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                throw new ProjectException($"External file is a symbolic link or junction: {sourceFileInfo.FullName}");
             string destFilePath = Path.Join(destPath, sourceFileInfo.Name);
             FileBackup.BackupFile(destFilePath);
             sourceFileInfo.CopyTo(destFilePath, true);
@@ -45,6 +49,8 @@ partial class ProjectContext
             {
                 continue;
             }
+            if (sourceDirInfo.Attributes.HasFlag(FileAttributes.ReparsePoint))
+                throw new ProjectException($"External directory is a symbolic link or junction: {sourceDirInfo.FullName}");
             string destDirPath = Path.Join(destPath, sourceDirInfo.Name);
             CopyDirectory(sourceDirInfo, destDirPath);
         }
