@@ -212,24 +212,17 @@
                 </MenuBarItem>
             </MenuBar>
 
-            <Border
-                Padding="0,6,0,2"
-                Background="Transparent"
-                BorderThickness="0"
-                CornerRadius="0">
-                <Grid ColumnSpacing="10">
+            <Grid
+                Margin="0,6,0,2"
+                ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="24" />
+                        <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border
-                        Padding="2"
-                        Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                        CornerRadius="6">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
                             <Button
                                 x:Name="ResourceBackButton"
                                 AutomationProperties.Name="Go back to previous resource"
@@ -244,15 +237,12 @@
                                 IsEnabled="False"
                                 Style="{StaticResource CompactIconButtonStyle}"
                                 ToolTipService.ToolTip="Forward (Alt+Right)" />
-                        </StackPanel>
-                    </Border>
+                    </StackPanel>
 
-                    <Border
+                    <StackPanel
                         Grid.Column="1"
-                        Padding="2"
-                        Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                        CornerRadius="6">
-                        <StackPanel Orientation="Horizontal" Spacing="2">
+                        Orientation="Horizontal"
+                        Spacing="6">
                             <Button
                                 x:Name="OpenButton"
                                 AutomationProperties.Name="Open GameMaker data file"
@@ -275,35 +265,22 @@
                                 MinHeight="34"
                                 Padding="13,6"
                                 ToolTipService.ToolTip="Save as (Ctrl+Shift+S)" />
-                        </StackPanel>
-                    </Border>
+                    </StackPanel>
 
                     <Border
-                        Grid.Column="2"
-                        Width="1"
-                        Height="32"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Background="{StaticResource WinUiPanelStrokeBrush}"
-                        Opacity="0.62" />
-
-                    <Grid
                         Grid.Column="3"
-                        VerticalAlignment="Center"
-                        ColumnSpacing="10">
+                        MinHeight="42"
+                        Padding="12,5"
+                        Background="{StaticResource WinUiHeaderBackgroundBrush}"
+                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                        BorderThickness="1"
+                        CornerRadius="6">
+                        <Grid ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Border
-                            Width="1"
-                            MinHeight="36"
-                            Background="{StaticResource WinUiPanelStrokeBrush}"
-                            CornerRadius="2"
-                            Opacity="0.82" />
                         <StackPanel
-                            Grid.Column="1"
                             VerticalAlignment="Center"
                             Spacing="2">
                             <TextBlock
@@ -319,15 +296,15 @@
                         </StackPanel>
                         <ProgressRing
                             x:Name="LoadProgressRing"
-                            Grid.Column="2"
+                            Grid.Column="1"
                             Width="22"
                             Height="22"
                             Margin="8,0,0,0"
                             IsActive="False"
                             Visibility="Collapsed" />
-                    </Grid>
-                </Grid>
-            </Border>
+                        </Grid>
+                    </Border>
+            </Grid>
         </StackPanel>
 
         <Grid
@@ -5913,40 +5890,79 @@
             </StackPanel>
             <Expander
                 Grid.Row="1"
-                Header="Script console"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
                 IsExpanded="False">
-            <Grid
-                ColumnSpacing="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBox
-                    x:Name="CommandBox"
-                    AcceptsReturn="False"
-                    Header="Command"
-                    IsEnabled="False"
-                    IsSpellCheckEnabled="False"
-                    IsTextPredictionEnabled="False"
-                    MaxHeight="84"
-                    MinHeight="36"
-                    PlaceholderText="Run C# script command"
-                    TextChanged="CommandBox_TextChanged"
-                    TextWrapping="Wrap" />
-                <Button
-                    x:Name="CommandRunButton"
-                    Grid.Column="1"
-                    MinWidth="84"
-                    VerticalAlignment="Bottom"
-                    Click="CommandRunButton_Click"
-                    IsEnabled="False">
+                <Expander.Header>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <SymbolIcon Symbol="Play" />
-                        <TextBlock Text="Run" />
+                        <FontIcon
+                            FontFamily="Segoe Fluent Icons"
+                            FontSize="13"
+                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                            Glyph="&#xE756;" />
+                        <TextBlock FontWeight="SemiBold" Text="Script console" />
+                        <TextBlock
+                            Foreground="{StaticResource WinUiMutedTextBrush}"
+                            Text="C# command runner" />
                     </StackPanel>
-                    <ToolTipService.ToolTip>Run command</ToolTipService.ToolTip>
-                </Button>
-            </Grid>
+                </Expander.Header>
+                <Border
+                    Padding="10"
+                    Background="{StaticResource WinUiHeaderBackgroundBrush}"
+                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                    BorderThickness="1,1,1,0"
+                    CornerRadius="0,0,6,6">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            Width="34"
+                            Height="34"
+                            VerticalAlignment="Center"
+                            Background="{StaticResource WinUiIconWellBrush}"
+                            CornerRadius="5">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontFamily="Cascadia Mono, Consolas"
+                                FontSize="15"
+                                Foreground="{StaticResource WinUiAccentBrush}"
+                                Text="&gt;_" />
+                        </Border>
+                        <TextBox
+                            x:Name="CommandBox"
+                            Grid.Column="1"
+                            AcceptsReturn="True"
+                            AutomationProperties.Name="C# script command"
+                            FontFamily="Cascadia Mono, Consolas"
+                            IsEnabled="False"
+                            IsSpellCheckEnabled="False"
+                            IsTextPredictionEnabled="False"
+                            KeyDown="CommandBox_KeyDown"
+                            MaxHeight="72"
+                            MinHeight="36"
+                            PlaceholderText="Enter a C# command. Enter to run; Shift+Enter for a new line."
+                            TextChanged="CommandBox_TextChanged"
+                            TextWrapping="Wrap" />
+                        <Button
+                            x:Name="CommandRunButton"
+                            Grid.Column="2"
+                            MinWidth="88"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="Run C# command"
+                            Click="CommandRunButton_Click"
+                            IsEnabled="False">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <SymbolIcon Symbol="Play" />
+                                <TextBlock Text="Run" />
+                            </StackPanel>
+                            <ToolTipService.ToolTip>Run command (Enter)</ToolTipService.ToolTip>
+                        </Button>
+                    </Grid>
+                </Border>
             </Expander>
             <Grid Grid.Row="2" RowSpacing="3">
                 <Grid.RowDefinitions>
