@@ -12,8 +12,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Underanalyzer.Decompiler;
 using UndertaleModLib;
 using UndertaleModLib.Compiler;
+using UndertaleModLib.Decompiler;
 using UndertaleModLib.Models;
 using UndertaleModLib.Project;
 using UndertaleModLib.Scripting;
@@ -159,6 +161,7 @@ public partial class Program : IScriptInterface
         // Setup load command
         Option<FileInfo[]> scriptRunnerOption = new("-s", "--scripts") { Description = "Scripts to apply to the <datafile>. Ex. a.csx b.csx" };
         Option<FileInfo> loadOutputOption = new("-o", "--output") { Description = "Where to save the modified data file" };
+        Option<bool> loadOverwriteOption = new("-f", "--overwrite") { Description = "Overwrite destination file if it already exists" };
         Option<string> loadLineOption = new("-l", "--line") { Description = "Run C# string. Runs AFTER everything else" };
         Option<bool> loadInteractiveOption = new("-i", "--interactive") { Description = "Interactive menu launch" };
         Command loadCommand = new("load", "Load a data file and perform actions on it")
@@ -166,7 +169,7 @@ public partial class Program : IScriptInterface
             dataFileArgument,
             scriptRunnerOption,
             verboseOption,
-            // TODO: why no force overwrite here, but needed for new?
+            loadOverwriteOption,
             loadOutputOption,
             loadLineOption,
             // TODO: make interactive another Command
@@ -179,6 +182,7 @@ public partial class Program : IScriptInterface
                 Datafile = parseResult.GetValue(dataFileArgument),
                 Scripts = parseResult.GetValue(scriptRunnerOption),
                 Line = parseResult.GetValue(loadLineOption),
+                Overwrite = parseResult.GetValue(loadOverwriteOption),
                 Output = parseResult.GetValue(loadOutputOption),
                 Interactive = parseResult.GetValue(loadInteractiveOption),
                 Verbose = parseResult.GetValue(verboseOption)
@@ -485,7 +489,14 @@ public partial class Program : IScriptInterface
 
         // If parameter to save file was given, save the data file
         if (options.Output != null)
+        {
+            if (options.Output.Exists && !options.Overwrite)
+            {
+                Console.Error.WriteLine($"'{options.Output}' already exists. Pass --overwrite to overwrite");
+                return EXIT_FAILURE;
+            }
             program.SaveDataFile(options.Output.FullName);
+        }
 
         return EXIT_SUCCESS;
     }
@@ -540,15 +551,30 @@ public partial class Program : IScriptInterface
         // If user provided code to dump, dump code
         if (requestedCodeDump && !program.Data.IsYYC() && (program.Data.Code?.Count > 0))
         {
-            // If user wanted to dump everything, do that, otherwise only dump what user provided
-            string[] codeArray;
-            if (options.Code.Contains(UMT_DUMP_ALL))
-                codeArray = program.Data.Code.Select(c => c.Name.Content).ToArray();
-            else
-                codeArray = options.Code;
+            GlobalDecompileContext globalDecompileContext = new(program.Data);
+            IDecompileSettings decompilerSettings = program.Data.ToolInfo.DecompilerSettings;
 
-            foreach (string code in codeArray)
-                program.DumpCodeEntry(code);
+            // If user wanted to dump everything, do that, otherwise only dump what user provided
+            if (options.Code.Contains(UMT_DUMP_ALL))
+            {
+                int totalCores = Environment.ProcessorCount;
+                int outerLimit = Math.Max(1, totalCores / 4);
+                Parallel.ForEach(program.Data.Code, new ParallelOptions { MaxDegreeOfParallelism = outerLimit }, code =>
+                {
+                    if (code.ParentEntry is not null)
+                    {
+                        return;
+                    }
+                    program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings);
+                });
+            }
+            else
+            {
+                foreach (string code in options.Code)
+                {
+                    program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings);
+                }
+            }
         }
 
         // If user wanted to dump strings, dump all of them in a text file
@@ -862,32 +888,44 @@ public partial class Program : IScriptInterface
     /// <summary>
     /// Dumps a code entry from a data file.
     /// </summary>
-    /// <param name="codeEntry">The code entry that should get dumped</param>
-    private void DumpCodeEntry(string codeEntry)
+    /// <param name="codeEntryName">The code entry name that should get dumped</param>
+    /// <param name="context">Decompile context to use when dumping</param>
+    /// <param name="settings">Settings to use for the decompiler</param>
+    private void DumpCodeEntry(string codeEntryName, GlobalDecompileContext context, IDecompileSettings settings)
     {
-        UndertaleCode code = Data.Code.ByName(codeEntry);
-
+        UndertaleCode code = Data.Code.ByName(codeEntryName);
 
         if (code == null)
         {
-            Console.Error.WriteLine($"Data file does not contain a code entry named {codeEntry}!");
+            Console.Error.WriteLine($"Data file does not contain a code entry named {codeEntryName}!");
             return;
         }
 
+        DumpCodeEntry(code, context, settings);
+    }
+
+    /// <summary>
+    /// Dumps a code entry from a data file.
+    /// </summary>
+    /// <param name="code">The code entry that should get dumped</param>
+    /// <param name="context">Decompile context to use when dumping</param>
+    /// <param name="settings">Settings to use for the decompiler</param>
+    private void DumpCodeEntry(UndertaleCode code, GlobalDecompileContext context, IDecompileSettings settings)
+    {
         string directory = Path.Join(Output.FullName, "CodeEntries");
 
         Directory.CreateDirectory(directory);
 
         if (Verbose)
-            Console.WriteLine($"Dumping {codeEntry}");
+            Console.WriteLine($"Dumping {code.Name?.Content}");
 
-        string dest = Paths.TryJoinVerifyWithinDirectory(directory, $"{codeEntry}.gml");
+        string dest = Paths.TryJoinVerifyWithinDirectory(directory, $"{code.Name?.Content}.gml");
         if (dest is null)
         {
-            Console.Error.WriteLine($"Failed to export code entry with name {codeEntry}");
+            Console.Error.WriteLine($"Failed to export code entry with name {code.Name?.Content}");
             return;
         }
-        File.WriteAllText(dest, GetDecompiledText(code));
+        File.WriteAllText(dest, GetDecompiledText(code, context, settings));
     }
 
     /// <summary>

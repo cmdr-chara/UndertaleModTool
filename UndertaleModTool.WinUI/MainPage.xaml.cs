@@ -1014,6 +1014,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         CheckBox cleanupDefaultArgumentsBox = AddCheckBox(cleanupPanel, "Cleanup default argument values", decompiler.CleanupDefaultArgumentValues);
         CheckBox cleanupBuiltinArrayVariablesBox = AddCheckBox(cleanupPanel, "Cleanup builtin array variables", decompiler.CleanupBuiltinArrayVariables);
         CheckBox cleanupLocalVarDeclarationsBox = AddCheckBox(cleanupPanel, "Cleanup local variable declarations", decompiler.CleanupLocalVarDeclarations);
+        CheckBox cleanupTemplateStringsBox = AddCheckBox(cleanupPanel, "Cleanup template strings", decompiler.CleanupTemplateStrings);
 
         panel.Children.Add(new Expander
         {
@@ -1058,6 +1059,7 @@ public sealed partial class MainPage : Page, IScriptInterface
             cleanupDefaultArgumentsBox.IsChecked = source.CleanupDefaultArgumentValues;
             cleanupBuiltinArrayVariablesBox.IsChecked = source.CleanupBuiltinArrayVariables;
             cleanupLocalVarDeclarationsBox.IsChecked = source.CleanupLocalVarDeclarations;
+            cleanupTemplateStringsBox.IsChecked = source.CleanupTemplateStrings;
         }
 
         LoadDecompilerControls(decompiler);
@@ -1145,6 +1147,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         decompiler.CleanupDefaultArgumentValues = cleanupDefaultArgumentsBox.IsChecked == true;
         decompiler.CleanupBuiltinArrayVariables = cleanupBuiltinArrayVariablesBox.IsChecked == true;
         decompiler.CleanupLocalVarDeclarations = cleanupLocalVarDeclarationsBox.IsChecked == true;
+        decompiler.CleanupTemplateStrings = cleanupTemplateStringsBox.IsChecked == true;
 
         if (!WinUiToolSettings.TrySave(out string? saveError))
         {
