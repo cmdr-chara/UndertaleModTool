@@ -55,6 +55,7 @@ public sealed class WinUiToolSettings
     public bool ShowNullEntriesInResourceTree { get; set; }
     public bool RememberWindowPlacements { get; set; }
     public bool RecompileAllCodeSourcesOnProjectSave { get; set; }
+    public List<string> RecentFilePaths { get; set; } = [];
 
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? ExtraProperties { get; set; }

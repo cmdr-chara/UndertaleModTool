@@ -489,20 +489,11 @@ public sealed partial class MainPage : Page, IScriptInterface
     {
         _recentFilePaths.Clear();
         _lastOpenedFilePath = null;
-        try
-        {
-            ApplicationData.Current.LocalSettings.Values.Remove(LastOpenedFilePathSetting);
-            ApplicationData.Current.LocalSettings.Values.Remove(RecentFilePathsSetting);
-        }
-        catch (Exception ex)
-        {
-            StatusBox.Text = $"Could not clear recent files:{Environment.NewLine}{ex.Message}";
-            return;
-        }
-
+        bool saved = SaveRecentFilePaths();
         UpdateRecentFileUi();
         UpdateCommandStates();
-        StatusBox.Text = "Recent files cleared.";
+        if (saved)
+            StatusBox.Text = "Recent files cleared.";
     }
 
     private async System.Threading.Tasks.Task OpenRecentPathAsync(string? path)
@@ -19160,6 +19151,10 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private static List<string> ReadRecentFilePaths()
     {
+        List<string> settingsPaths = NormalizeRecentFilePaths(WinUiToolSettings.Instance.RecentFilePaths).ToList();
+        if (settingsPaths.Count > 0)
+            return settingsPaths;
+
         try
         {
             object? recentValue = ApplicationData.Current.LocalSettings.Values[RecentFilePathsSetting];
@@ -19167,18 +19162,27 @@ public sealed partial class MainPage : Page, IScriptInterface
             {
                 string[]? paths = JsonSerializer.Deserialize<string[]>(recentJson);
                 if (paths is not null)
-                    return NormalizeRecentFilePaths(paths).ToList();
+                    settingsPaths = NormalizeRecentFilePaths(paths).ToList();
             }
 
-            object? lastValue = ApplicationData.Current.LocalSettings.Values[LastOpenedFilePathSetting];
-            if (lastValue is string lastPath && !string.IsNullOrWhiteSpace(lastPath))
-                return NormalizeRecentFilePaths([lastPath]).ToList();
+            if (settingsPaths.Count == 0)
+            {
+                object? lastValue = ApplicationData.Current.LocalSettings.Values[LastOpenedFilePathSetting];
+                if (lastValue is string lastPath && !string.IsNullOrWhiteSpace(lastPath))
+                    settingsPaths = NormalizeRecentFilePaths([lastPath]).ToList();
+            }
         }
         catch
         {
         }
 
-        return [];
+        if (settingsPaths.Count > 0)
+        {
+            WinUiToolSettings.Instance.RecentFilePaths = settingsPaths;
+            WinUiToolSettings.TrySave(out _);
+        }
+
+        return settingsPaths;
     }
 
     private void RememberOpenedFile(string path)
@@ -19190,20 +19194,17 @@ public sealed partial class MainPage : Page, IScriptInterface
         UpdateCommandStates();
     }
 
-    private void SaveRecentFilePaths()
+    private bool SaveRecentFilePaths()
     {
-        try
-        {
-            ApplicationData.Current.LocalSettings.Values[RecentFilePathsSetting] = JsonSerializer.Serialize(_recentFilePaths);
-            if (_lastOpenedFilePath is not null)
-                ApplicationData.Current.LocalSettings.Values[LastOpenedFilePathSetting] = _lastOpenedFilePath;
-            else
-                ApplicationData.Current.LocalSettings.Values.Remove(LastOpenedFilePathSetting);
-        }
-        catch (Exception ex)
-        {
-            StatusBox.Text = $"Could not remember recent files:{Environment.NewLine}{ex.Message}";
-        }
+        WinUiToolSettings.Instance.RecentFilePaths = _recentFilePaths.ToList();
+        if (WinUiToolSettings.TrySave(out string? error))
+            return true;
+
+        SetLoadActivity(
+            $"Could not remember recent files. {error}",
+            "WinUiErrorBrush",
+            "\uEA39");
+        return false;
     }
 
     private void UpdateRecentFileUi()

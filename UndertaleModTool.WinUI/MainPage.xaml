@@ -10,17 +10,17 @@
     SizeChanged="MainPage_SizeChanged">
 
     <Grid
-        Padding="16,10,16,12"
-        Background="{StaticResource WinUiShellBackgroundBrush}"
-        RowSpacing="10">
+        Padding="16,4,16,8"
+        Background="{ThemeResource WinUiShellBackgroundBrush}"
+        RowSpacing="6">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <StackPanel Spacing="6">
-            <MenuBar>
+        <StackPanel Spacing="2">
+            <MenuBar Height="34">
                 <MenuBarItem Title="File">
                     <MenuFlyoutItem
                         x:Name="NewDataFileMenuItem"
@@ -213,7 +213,7 @@
             </MenuBar>
 
             <Grid
-                Margin="0,6,0,2"
+                Margin="0"
                 ColumnSpacing="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
@@ -271,8 +271,8 @@
                         Grid.Column="3"
                         MinHeight="42"
                         Padding="12,5"
-                        Background="{StaticResource WinUiHeaderBackgroundBrush}"
-                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                        Background="{ThemeResource WinUiHeaderBackgroundBrush}"
+                        BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                         BorderThickness="1"
                         CornerRadius="6">
                         <Grid ColumnSpacing="10">
@@ -290,7 +290,7 @@
                                 Text="No game loaded" />
                             <TextBlock
                                 x:Name="FilePathText"
-                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                Foreground="{ThemeResource WinUiQuietTextBrush}"
                                 Text="Open a GameMaker data file to browse resources."
                                 TextTrimming="CharacterEllipsis" />
                         </StackPanel>
@@ -320,8 +320,8 @@
 
             <Border
                 Padding="8"
-                Background="{StaticResource WinUiPanelBackgroundBrush}"
-                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                 BorderThickness="1"
                 CornerRadius="6">
                 <ListView
@@ -354,13 +354,13 @@
                                         Height="22"
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
-                                        Background="{StaticResource WinUiIconWellBrush}"
+                                        Background="{ThemeResource WinUiIconWellBrush}"
                                         CornerRadius="5"
                                         Opacity="0.72">
                                         <SymbolIcon
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
-                                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                                            Foreground="{ThemeResource WinUiQuietTextBrush}"
                                             Symbol="{Binding IconSymbol}" />
                                     </Border>
                                     <TextBlock
@@ -374,15 +374,15 @@
                                         MinWidth="42"
                                         Padding="8,2"
                                         VerticalAlignment="Center"
-                                        Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                        Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                        BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                         BorderThickness="1"
                                         CornerRadius="10">
                                         <TextBlock
                                             HorizontalAlignment="Center"
                                             FontSize="12"
                                             FontWeight="SemiBold"
-                                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                                            Foreground="{ThemeResource WinUiQuietTextBrush}"
                                             Text="{Binding CountText}" />
                                     </Border>
                                 </Grid>
@@ -396,8 +396,8 @@
                 x:Name="ResourceItemsPane"
                 Grid.Column="1"
                 Padding="10,8,8,8"
-                Background="{StaticResource WinUiPanelBackgroundBrush}"
-                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                 BorderThickness="1"
                 CornerRadius="6">
                 <Grid
@@ -479,13 +479,13 @@
                                             Height="22"
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
-                                            Background="{StaticResource WinUiIconWellBrush}"
+                                            Background="{ThemeResource WinUiIconWellBrush}"
                                             CornerRadius="5"
                                             Opacity="0.82">
                                             <SymbolIcon
                                                 HorizontalAlignment="Center"
                                                 VerticalAlignment="Center"
-                                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                                Foreground="{ThemeResource WinUiQuietTextBrush}"
                                                 Symbol="{Binding IconSymbol}" />
                                         </Border>
                                         <StackPanel
@@ -498,7 +498,7 @@
                                                 TextTrimming="CharacterEllipsis" />
                                             <TextBlock
                                                 FontSize="12"
-                                                Foreground="{StaticResource WinUiMutedTextBrush}"
+                                                Foreground="{ThemeResource WinUiMutedTextBrush}"
                                                 Text="{Binding Subtitle}"
                                                 TextTrimming="CharacterEllipsis" />
                                         </StackPanel>
@@ -513,7 +513,7 @@
                         Grid.Row="2"
                         Margin="6,2,6,0"
                         FontSize="12"
-                        Foreground="{StaticResource WinUiMutedTextBrush}"
+                        Foreground="{ThemeResource WinUiMutedTextBrush}"
                         Text="No items"
                         TextTrimming="CharacterEllipsis" />
                 </Grid>
@@ -526,8 +526,8 @@
                 VerticalScrollBarVisibility="Auto">
                 <Border
                     Padding="10"
-                    Background="{StaticResource WinUiPanelBackgroundBrush}"
-                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                    Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                     BorderThickness="1"
                     CornerRadius="6">
                     <StackPanel Spacing="10">
@@ -571,13 +571,13 @@
                                                 Width="20"
                                                 Height="20"
                                                 VerticalAlignment="Center"
-                                                Background="{StaticResource WinUiIconWellBrush}"
+                                                Background="{ThemeResource WinUiIconWellBrush}"
                                                 CornerRadius="5"
                                                 Opacity="0.86">
                                                 <SymbolIcon
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
-                                                    Foreground="{StaticResource WinUiQuietTextBrush}"
+                                                    Foreground="{ThemeResource WinUiQuietTextBrush}"
                                                     Symbol="{Binding IconSymbol}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Spacing="1">
@@ -587,7 +587,7 @@
                                                     TextTrimming="CharacterEllipsis" />
                                                 <TextBlock
                                                     FontSize="12"
-                                                    Foreground="{StaticResource WinUiMutedTextBrush}"
+                                                    Foreground="{ThemeResource WinUiMutedTextBrush}"
                                                     Text="{Binding CategoryLabel}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
@@ -601,8 +601,8 @@
                     <Border
                         x:Name="ProjectExportPanel"
                         Padding="10,8"
-                        Background="{StaticResource WinUiCardBackgroundBrush}"
-                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                        Background="{ThemeResource WinUiCardBackgroundBrush}"
+                        BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                         BorderThickness="1"
                         CornerRadius="6"
                         Visibility="Collapsed">
@@ -618,7 +618,7 @@
                                 <TextBlock
                                     x:Name="ProjectExportDescriptionText"
                                     FontSize="12"
-                                    Foreground="{StaticResource WinUiMutedTextBrush}"
+                                    Foreground="{ThemeResource WinUiMutedTextBrush}"
                                     TextWrapping="WrapWholeWords" />
                             </StackPanel>
                             <CheckBox
@@ -779,7 +779,7 @@
                                 FontSize="13"
                                 TextWrapping="Wrap" />
                             <TextBlock
-                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                Foreground="{ThemeResource WinUiQuietTextBrush}"
                                 Text="Reading resources and preparing the editor. Large projects can take a moment."
                                 TextWrapping="Wrap" />
                         </StackPanel>
@@ -808,8 +808,8 @@
                                     Width="56"
                                     Height="56"
                                     HorizontalAlignment="Left"
-                                    Background="{StaticResource WinUiAccentSubtleBrush}"
-                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                    Background="{ThemeResource WinUiAccentSubtleBrush}"
+                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12"
                                     Opacity="0.88">
@@ -818,7 +818,7 @@
                                         VerticalAlignment="Center"
                                         FontFamily="Segoe Fluent Icons"
                                         FontSize="24"
-                                        Foreground="{StaticResource WinUiAccentBrush}"
+                                        Foreground="{ThemeResource WinUiAccentBrush}"
                                         Glyph="&#xE8E5;" />
                                 </Border>
                                 <StackPanel Spacing="5">
@@ -874,8 +874,8 @@
                                 HorizontalAlignment="Stretch"
                                 AllowDrop="True"
                                 AutomationProperties.Name="Data file drop zone. Drop a supported GameMaker data file here."
-                                Background="{StaticResource WinUiDropZoneBackgroundBrush}"
-                                BorderBrush="{StaticResource WinUiDropZoneStrokeBrush}"
+                                Background="{ThemeResource WinUiDropZoneBackgroundBrush}"
+                                BorderBrush="{ThemeResource WinUiDropZoneStrokeBrush}"
                                 BorderThickness="1"
                                 CornerRadius="8"
                                 DragOver="NoDataDropZone_DragOver"
@@ -893,7 +893,7 @@
                                         Height="42"
                                         VerticalAlignment="Center"
                                         Background="{ThemeResource ControlFillColorSecondaryBrush}"
-                                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                        BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                         BorderThickness="1"
                                         CornerRadius="8">
                                         <FontIcon
@@ -901,7 +901,7 @@
                                             VerticalAlignment="Center"
                                             FontFamily="Segoe Fluent Icons"
                                             FontSize="18"
-                                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                                            Foreground="{ThemeResource WinUiQuietTextBrush}"
                                             Glyph="&#xE898;" />
                                     </Border>
                                     <StackPanel
@@ -914,7 +914,7 @@
                                             Text="Drop a data file here" />
                                         <TextBlock
                                             MaxWidth="300"
-                                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                                            Foreground="{ThemeResource WinUiQuietTextBrush}"
                                             FontSize="12"
                                             LineHeight="17"
                                             Text="Drop one supported file to open it in the editor."
@@ -1601,8 +1601,8 @@
                                     <StackPanel Spacing="16">
                                         <Border
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="8">
@@ -1622,35 +1622,35 @@
                                                 <RowDefinition Height="Auto" />
                                             </Grid.RowDefinitions>
 
-                                            <Border Grid.Row="0" Grid.Column="0" Padding="14" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Grid.Row="0" Grid.Column="0" Padding="14" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock Text="Dimensions" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                     <TextBlock x:Name="OverviewDimensionsText" FontSize="16" FontWeight="SemiBold" Text="320 x 240 px"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border Grid.Row="0" Grid.Column="1" Padding="14" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Grid.Row="0" Grid.Column="1" Padding="14" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock Text="Frames" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                     <TextBlock x:Name="OverviewFramesCountText" FontSize="16" FontWeight="SemiBold" Text="1 frame"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border Grid.Row="0" Grid.Column="2" Padding="14" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Grid.Row="0" Grid.Column="2" Padding="14" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock Text="Origin" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                     <TextBlock x:Name="OverviewOriginText" FontSize="16" FontWeight="SemiBold" Text="(0, 0)"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border Grid.Row="1" Grid.Column="0" Padding="14" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Grid.Row="1" Grid.Column="0" Padding="14" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock Text="Collision Masks" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                     <TextBlock x:Name="OverviewCollisionCountText" FontSize="16" FontWeight="SemiBold" Text="1 mask"/>
                                                 </StackPanel>
                                             </Border>
 
-                                            <Border Grid.Row="1" Grid.Column="1" Padding="14" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Grid.Row="1" Grid.Column="1" Padding="14" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock Text="Type" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
                                                     <TextBlock x:Name="OverviewTypeText" FontSize="16" FontWeight="SemiBold" Text="Normal"/>
@@ -1676,10 +1676,10 @@
 
                                         <!-- Column 0 Cards -->
                                         <StackPanel Grid.Column="0" Grid.Row="0" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xEB9F;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xEB9F;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Dimensions &amp; Layout" />
                                                     </StackPanel>
                                                     <TextBox
@@ -1725,10 +1725,10 @@
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="0" Grid.Row="1" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xE768;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xE768;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Playback &amp; Timing" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="8">
@@ -1744,10 +1744,10 @@
 
                                         <!-- Column 1 Cards -->
                                         <StackPanel Grid.Column="1" Grid.Row="0" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xE707;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xE707;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Origin &amp; Alignment" />
                                                     </StackPanel>
                                                     <Grid ColumnSpacing="8" RowSpacing="6">
@@ -1781,10 +1781,10 @@
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1" Grid.Row="1" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xE895;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xE895;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Versioning &amp; Spine" />
                                                     </StackPanel>
                                                     <Grid ColumnSpacing="8" RowSpacing="6">
@@ -1815,10 +1815,10 @@
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="2" Grid.Row="0" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xE8B9;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xE8B9;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Texture &amp; Rendering" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="7">
@@ -1849,10 +1849,10 @@
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="2" Grid.Row="1" Spacing="8">
-                                            <Border Padding="10" Background="{StaticResource WinUiPanelBackgroundAltBrush}" BorderBrush="{StaticResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
+                                            <Border Padding="10" Background="{ThemeResource WinUiPanelBackgroundAltBrush}" BorderBrush="{ThemeResource WinUiPanelStrokeBrush}" BorderThickness="1" CornerRadius="8">
                                                 <StackPanel Spacing="7">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{StaticResource WinUiQuietTextBrush}" Glyph="&#xE713;" />
+                                                        <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Foreground="{ThemeResource WinUiQuietTextBrush}" Glyph="&#xE713;" />
                                                         <TextBlock FontSize="14" FontWeight="SemiBold" Text="Advanced Flags &amp; Data" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="7">
@@ -1875,16 +1875,16 @@
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
                                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Sprite preview" />
                                                 <Border
                                                     MinHeight="360"
-                                                    Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                                    Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6"
                                                     Padding="10">
@@ -1907,8 +1907,8 @@
                                         <Border
                                             Grid.Column="1"
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
@@ -1969,8 +1969,8 @@
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
@@ -1997,8 +1997,8 @@
                                                                 <Border
                                                                     Width="24"
                                                                     Height="24"
-                                                                    Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                                                    Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                                                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                                                     BorderThickness="1"
                                                                     CornerRadius="4">
                                                                     <SymbolIcon Symbol="Pictures" />
@@ -2016,8 +2016,8 @@
                                         <Border
                                             Grid.Column="1"
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
@@ -2050,8 +2050,8 @@
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
@@ -2078,8 +2078,8 @@
                                                                 <Border
                                                                     Width="24"
                                                                     Height="24"
-                                                                    Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                                                    Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                                                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                                                     BorderThickness="1"
                                                                     CornerRadius="4">
                                                                     <SymbolIcon Symbol="Flag" />
@@ -2097,8 +2097,8 @@
                                         <Border
                                             Grid.Column="1"
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="10">
@@ -2134,8 +2134,8 @@
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="12">
@@ -2167,8 +2167,8 @@
                                         <Border
                                             Grid.Column="1"
                                             Padding="16"
-                                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                             BorderThickness="1"
                                             CornerRadius="8">
                                             <StackPanel Spacing="10">
@@ -2189,8 +2189,8 @@
                         <Border
                             Grid.Column="1"
                             Padding="12"
-                            Background="{StaticResource WinUiPanelBackgroundAltBrush}"
-                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                            Background="{ThemeResource WinUiPanelBackgroundAltBrush}"
+                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                             BorderThickness="1"
                             CornerRadius="8"
                             VerticalAlignment="Top">
@@ -2203,8 +2203,8 @@
 
                                 <Border
                                     Height="232"
-                                    Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                    Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                     BorderThickness="1"
                                     CornerRadius="6"
                                     Padding="8">
@@ -2698,7 +2698,7 @@
                             MaxZoomFactor="4"
                             PointerWheelChanged="RoomPreviewScrollViewer_PointerWheelChanged">
                             <Border
-                                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                 BorderThickness="1"
                                 Padding="8">
                                 <Canvas
@@ -4312,7 +4312,7 @@
                             Width="360"
                             Height="220"
                             HorizontalAlignment="Left"
-                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                            BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                             BorderThickness="1"
                             Padding="8">
                             <Canvas x:Name="PathPreviewCanvas" />
@@ -5395,7 +5395,7 @@
                             <TextBlock
                                 Grid.Column="2"
                                 VerticalAlignment="Center"
-                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                Foreground="{ThemeResource WinUiQuietTextBrush}"
                                 Text="Zoom" />
                             <Slider
                                 x:Name="TexturePreviewZoomSlider"
@@ -5451,7 +5451,7 @@
                             MaxZoomFactor="4"
                             PointerWheelChanged="TexturePreviewScrollViewer_PointerWheelChanged">
                             <Border
-                                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                 BorderThickness="1"
                                 Padding="8">
                                 <Grid
@@ -5668,8 +5668,8 @@
                 x:Name="RecentFilesPanel"
                 Grid.Column="3"
                 Padding="14"
-                Background="{StaticResource WinUiPanelBackgroundBrush}"
-                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Visibility="Collapsed">
@@ -5684,8 +5684,8 @@
                             <Border
                                 Width="32"
                                 Height="32"
-                                Background="{StaticResource WinUiIconWellBrush}"
-                                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                Background="{ThemeResource WinUiIconWellBrush}"
+                                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                 BorderThickness="1"
                                 CornerRadius="7">
                                 <FontIcon
@@ -5693,7 +5693,7 @@
                                     VerticalAlignment="Center"
                                     FontFamily="Segoe Fluent Icons"
                                     FontSize="16"
-                                    Foreground="{StaticResource WinUiQuietTextBrush}"
+                                    Foreground="{ThemeResource WinUiQuietTextBrush}"
                                     Glyph="&#xE823;" />
                             </Border>
                             <StackPanel VerticalAlignment="Center" Spacing="1">
@@ -5738,8 +5738,8 @@
                                                     Height="30"
                                                     Margin="0,2,0,0"
                                                     VerticalAlignment="Top"
-                                                    Background="{StaticResource WinUiIconWellBrush}"
-                                                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                                    Background="{ThemeResource WinUiIconWellBrush}"
+                                                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                                     BorderThickness="1"
                                                     CornerRadius="6">
                                                     <FontIcon
@@ -5747,7 +5747,7 @@
                                                         VerticalAlignment="Center"
                                                         FontFamily="Segoe Fluent Icons"
                                                         FontSize="16"
-                                                        Foreground="{StaticResource WinUiQuietTextBrush}"
+                                                        Foreground="{ThemeResource WinUiQuietTextBrush}"
                                                         Glyph="&#xE8A5;" />
                                                 </Border>
                                                 <Grid
@@ -5776,13 +5776,13 @@
                                                         Margin="0,3,0,0"
                                                         Padding="7,2"
                                                         HorizontalAlignment="Left"
-                                                        Background="{StaticResource WinUiIconWellBrush}"
-                                                        BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                                        Background="{ThemeResource WinUiIconWellBrush}"
+                                                        BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                                         BorderThickness="1"
                                                         CornerRadius="10">
                                                         <TextBlock
                                                             FontSize="11"
-                                                            Foreground="{StaticResource WinUiMutedTextBrush}"
+                                                            Foreground="{ThemeResource WinUiMutedTextBrush}"
                                                             Text="{Binding Status}" />
                                                     </Border>
                                                 </Grid>
@@ -5801,8 +5801,8 @@
                                 Width="68"
                                 Height="68"
                                 HorizontalAlignment="Center"
-                                Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                                Background="{ThemeResource WinUiPanelBackgroundBrush}"
+                                BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                                 BorderThickness="1"
                                 CornerRadius="12"
                                 Opacity="0.72">
@@ -5811,7 +5811,7 @@
                                     VerticalAlignment="Center"
                                     FontFamily="Segoe Fluent Icons"
                                     FontSize="28"
-                                    Foreground="{StaticResource WinUiMutedTextBrush}"
+                                    Foreground="{ThemeResource WinUiMutedTextBrush}"
                                     Glyph="&#xE8A5;" />
                             </Border>
                             <TextBlock
@@ -5851,8 +5851,7 @@
 
         <Grid
             Grid.Row="2"
-            Margin="0,2,0,0"
-            RowSpacing="6">
+            RowSpacing="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -5898,20 +5897,19 @@
                         <FontIcon
                             FontFamily="Segoe Fluent Icons"
                             FontSize="13"
-                            Foreground="{StaticResource WinUiQuietTextBrush}"
+                            Foreground="{ThemeResource WinUiQuietTextBrush}"
                             Glyph="&#xE756;" />
                         <TextBlock FontWeight="SemiBold" Text="Script console" />
                         <TextBlock
-                            Foreground="{StaticResource WinUiMutedTextBrush}"
+                            Foreground="{ThemeResource WinUiMutedTextBrush}"
                             Text="C# command runner" />
                     </StackPanel>
                 </Expander.Header>
                 <Border
-                    Padding="10"
-                    Background="{StaticResource WinUiHeaderBackgroundBrush}"
-                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
-                    BorderThickness="1,1,1,0"
-                    CornerRadius="0,0,6,6">
+                    Margin="0,2,0,0"
+                    Padding="8,5"
+                    Background="Transparent"
+                    BorderThickness="0">
                     <Grid ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -5919,17 +5917,17 @@
                             <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
                         <Border
-                            Width="34"
-                            Height="34"
+                            Width="30"
+                            Height="30"
                             VerticalAlignment="Center"
-                            Background="{StaticResource WinUiIconWellBrush}"
+                            Background="{ThemeResource WinUiIconWellBrush}"
                             CornerRadius="5">
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="Cascadia Mono, Consolas"
                                 FontSize="15"
-                                Foreground="{StaticResource WinUiAccentBrush}"
+                                Foreground="{ThemeResource WinUiAccentBrush}"
                                 Text="&gt;_" />
                         </Border>
                         <TextBox
@@ -5941,16 +5939,15 @@
                             IsEnabled="False"
                             IsSpellCheckEnabled="False"
                             IsTextPredictionEnabled="False"
-                            KeyDown="CommandBox_KeyDown"
-                            MaxHeight="72"
-                            MinHeight="36"
+                            MaxHeight="64"
+                            MinHeight="34"
                             PlaceholderText="Enter a C# command. Enter to run; Shift+Enter for a new line."
                             TextChanged="CommandBox_TextChanged"
                             TextWrapping="Wrap" />
                         <Button
                             x:Name="CommandRunButton"
                             Grid.Column="2"
-                            MinWidth="88"
+                            MinWidth="78"
                             VerticalAlignment="Center"
                             AutomationProperties.Name="Run C# command"
                             Click="CommandRunButton_Click"
@@ -5971,22 +5968,22 @@
                 </Grid.RowDefinitions>
                 <TextBlock
                     FontSize="12"
-                    Foreground="{StaticResource WinUiQuietTextBrush}"
+                    Foreground="{ThemeResource WinUiQuietTextBrush}"
                     Text="Activity" />
                 <Border
                     x:Name="ActivityStatusBorder"
                     Grid.Row="1"
                     AutomationProperties.LiveSetting="Polite"
                     AutomationProperties.Name="Application activity"
-                    Background="{StaticResource WinUiHeaderBackgroundBrush}"
-                    BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
+                    Background="{ThemeResource WinUiHeaderBackgroundBrush}"
+                    BorderBrush="{ThemeResource WinUiPanelStrokeBrush}"
                     BorderThickness="1"
                     CornerRadius="6"
-                    MinHeight="42"
-                    MaxHeight="82"
-                    Padding="10,3">
+                    MinHeight="36"
+                    MaxHeight="36"
+                    Padding="8,2">
                     <Grid
-                        MinHeight="34"
+                        MinHeight="30"
                         ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -5997,7 +5994,7 @@
                             Width="20"
                             Height="20"
                             VerticalAlignment="Center"
-                            Background="{StaticResource WinUiIconWellBrush}"
+                            Background="{ThemeResource WinUiIconWellBrush}"
                             CornerRadius="5">
                             <FontIcon
                                 x:Name="ActivityStatusIcon"
@@ -6005,26 +6002,22 @@
                                 VerticalAlignment="Center"
                                 FontFamily="Segoe Fluent Icons"
                                 FontSize="12"
-                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                Foreground="{ThemeResource WinUiQuietTextBrush}"
                                 Glyph="&#xE946;" />
                         </Border>
-                        <ScrollViewer
+                        <TextBlock
+                            x:Name="StatusBox"
                             Grid.Column="1"
+                            AutomationProperties.LiveSetting="Polite"
+                            AutomationProperties.Name="Current application activity"
                             VerticalAlignment="Center"
-                            HorizontalScrollBarVisibility="Disabled"
-                            VerticalScrollBarVisibility="Auto">
-                            <TextBlock
-                                x:Name="StatusBox"
-                                AutomationProperties.LiveSetting="Polite"
-                                AutomationProperties.Name="Current application activity"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Foreground="{StaticResource WinUiQuietTextBrush}"
-                                LineHeight="16"
-                                Margin="0,0,0,1"
-                                Text="Ready."
-                                TextWrapping="WrapWholeWords" />
-                        </ScrollViewer>
+                            FontSize="12"
+                            Foreground="{ThemeResource WinUiQuietTextBrush}"
+                            Margin="0,0,0,1"
+                            MaxLines="1"
+                            Text="Ready."
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
                     </Grid>
                 </Border>
             </Grid>
