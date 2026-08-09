@@ -6,7 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:UndertaleModTool_WinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    SizeChanged="MainPage_SizeChanged">
 
     <Grid
         Padding="16,10,16,12"
@@ -220,55 +221,65 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="24" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Button
-                        x:Name="ResourceBackButton"
-                        Click="ResourceBackButton_Click"
-                        IsEnabled="False"
-                        MinHeight="34"
-                        MinWidth="36"
-                        Padding="8,6" />
-
-                    <Button
-                        x:Name="ResourceForwardButton"
-                        Grid.Column="1"
-                        Click="ResourceForwardButton_Click"
-                        IsEnabled="False"
-                        MinHeight="34"
-                        MinWidth="36"
-                        Padding="8,6" />
-
-                    <Button
-                        x:Name="OpenButton"
-                        Grid.Column="2"
-                        Click="OpenButton_Click"
-                        MinHeight="34"
-                        Padding="13,6" />
-
-                    <Button
-                        x:Name="SaveButton"
-                        Grid.Column="3"
-                        Click="SaveButton_Click"
-                        IsEnabled="False"
-                        MinHeight="34"
-                        Padding="13,6" />
-
-                    <Button
-                        x:Name="SaveAsButton"
-                        Grid.Column="4"
-                        Click="SaveAsButton_Click"
-                        IsEnabled="False"
-                        MinHeight="34"
-                        Padding="13,6" />
+                    <Border
+                        Padding="2"
+                        Background="{StaticResource WinUiPanelBackgroundAltBrush}"
+                        CornerRadius="6">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button
+                                x:Name="ResourceBackButton"
+                                AutomationProperties.Name="Go back to previous resource"
+                                Click="ResourceBackButton_Click"
+                                IsEnabled="False"
+                                Style="{StaticResource CompactIconButtonStyle}"
+                                ToolTipService.ToolTip="Back (Alt+Left)" />
+                            <Button
+                                x:Name="ResourceForwardButton"
+                                AutomationProperties.Name="Go forward to next resource"
+                                Click="ResourceForwardButton_Click"
+                                IsEnabled="False"
+                                Style="{StaticResource CompactIconButtonStyle}"
+                                ToolTipService.ToolTip="Forward (Alt+Right)" />
+                        </StackPanel>
+                    </Border>
 
                     <Border
-                        Grid.Column="5"
+                        Grid.Column="1"
+                        Padding="2"
+                        Background="{StaticResource WinUiPanelBackgroundAltBrush}"
+                        CornerRadius="6">
+                        <StackPanel Orientation="Horizontal" Spacing="2">
+                            <Button
+                                x:Name="OpenButton"
+                                AutomationProperties.Name="Open GameMaker data file"
+                                Click="OpenButton_Click"
+                                MinHeight="34"
+                                Padding="13,6"
+                                Style="{StaticResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Open data file (Ctrl+O)" />
+                            <Button
+                                x:Name="SaveButton"
+                                Click="SaveButton_Click"
+                                IsEnabled="False"
+                                MinHeight="34"
+                                Padding="13,6"
+                                ToolTipService.ToolTip="Save (Ctrl+S)" />
+                            <Button
+                                x:Name="SaveAsButton"
+                                Click="SaveAsButton_Click"
+                                IsEnabled="False"
+                                MinHeight="34"
+                                Padding="13,6"
+                                ToolTipService.ToolTip="Save as (Ctrl+Shift+S)" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border
+                        Grid.Column="2"
                         Width="1"
                         Height="32"
                         HorizontalAlignment="Center"
@@ -277,7 +288,7 @@
                         Opacity="0.62" />
 
                     <Grid
-                        Grid.Column="6"
+                        Grid.Column="3"
                         VerticalAlignment="Center"
                         ColumnSpacing="10">
                         <Grid.ColumnDefinitions>
@@ -338,11 +349,17 @@
                 CornerRadius="6">
                 <ListView
                     x:Name="CategoryList"
-                    Header="Resources"
+                    AutomationProperties.Name="Resource categories"
                     IsItemClickEnabled="True"
                     ItemClick="CategoryList_ItemClick"
                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                     SelectionMode="Single">
+                    <ListView.Header>
+                        <StackPanel Margin="6,4,6,10" Spacing="2">
+                            <TextBlock Style="{StaticResource PanelHeaderTextStyle}" Text="Resource library" />
+                            <TextBlock Style="{StaticResource MutedDescriptionTextStyle}" Text="Choose an asset type to browse." />
+                        </StackPanel>
+                    </ListView.Header>
                     <ListView.ItemTemplate>
                         <DataTemplate>
                             <Border
@@ -423,26 +440,33 @@
                         </Grid.ColumnDefinitions>
                         <TextBox
                             x:Name="ResourceFilterBox"
-                            Header="Items"
+                            AutomationProperties.Name="Filter resources in selected category"
+                            Header="Selected resources"
                             IsEnabled="False"
                             KeyDown="ResourceFilterBox_KeyDown"
-                            PlaceholderText="Filter resources"
-                            TextChanged="ResourceFilterBox_TextChanged" />
+                            PlaceholderText="Search by resource name"
+                            TextChanged="ResourceFilterBox_TextChanged"
+                            ToolTipService.ToolTip="Filter the selected resource category. Press Escape to clear." />
                         <Button
                             x:Name="AddResourceButton"
                             Grid.Column="1"
+                            AutomationProperties.Name="Add resource"
                             VerticalAlignment="Bottom"
                             Click="AddResourceButton_Click"
-                            IsEnabled="False">
+                            IsEnabled="False"
+                            Style="{StaticResource CompactIconButtonStyle}">
                             <SymbolIcon Symbol="Add" />
                             <ToolTipService.ToolTip>Add resource</ToolTipService.ToolTip>
                         </Button>
                         <Button
                             x:Name="DuplicateStringButton"
                             Grid.Column="2"
+                            AutomationProperties.Name="Duplicate selected resource"
                             VerticalAlignment="Bottom"
                             Click="DuplicateStringButton_Click"
-                            IsEnabled="False">
+                            IsEnabled="False"
+                            Style="{StaticResource CompactIconButtonStyle}"
+                            ToolTipService.ToolTip="Duplicate selected resource">
                             <SymbolIcon Symbol="Copy" />
                         </Button>
                     </Grid>
@@ -450,6 +474,7 @@
                     <ListView
                         x:Name="ResourceList"
                         Grid.Row="1"
+                        AutomationProperties.Name="Resources in selected category"
                         AllowDrop="True"
                         CanDragItems="True"
                         DragItemsStarting="ResourceList_DragItemsStarting"
@@ -755,15 +780,44 @@
                     </Expander>
 
                     <Grid
+                        x:Name="LoadingStatePanel"
+                        MinHeight="420"
+                        Padding="44"
+                        Visibility="Collapsed">
+                        <StackPanel
+                            MaxWidth="520"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Spacing="12">
+                            <ProgressRing
+                                Width="30"
+                                Height="30"
+                                HorizontalAlignment="Left"
+                                IsActive="True" />
+                            <TextBlock Style="{StaticResource PanelHeaderTextStyle}" FontSize="24" Text="Loading data file" />
+                            <TextBlock
+                                x:Name="LoadingPathText"
+                                AutomationProperties.Name="File being loaded"
+                                Style="{StaticResource MutedDescriptionTextStyle}"
+                                FontSize="13"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                Foreground="{StaticResource WinUiQuietTextBrush}"
+                                Text="Reading resources and preparing the editor. Large projects can take a moment."
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid
                         x:Name="NoDataEmptyStatePanel"
                         MinHeight="520"
-                        Padding="34,18,34,30"
+                        Padding="42,22,34,30"
                         Visibility="Collapsed">
                         <Grid
-                            MaxWidth="760"
-                            HorizontalAlignment="Center"
+                            MaxWidth="820"
+                            HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            RowSpacing="18">
+                            RowSpacing="20">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -771,13 +825,13 @@
                             </Grid.RowDefinitions>
 
                             <StackPanel
-                                HorizontalAlignment="Center"
+                                HorizontalAlignment="Left"
                                 Spacing="10">
                                 <Border
                                     Width="56"
                                     Height="56"
-                                    HorizontalAlignment="Center"
-                                    Background="{StaticResource WinUiPanelBackgroundAltBrush}"
+                                    HorizontalAlignment="Left"
+                                    Background="{StaticResource WinUiAccentSubtleBrush}"
                                     BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
                                     BorderThickness="1"
                                     CornerRadius="12"
@@ -787,67 +841,52 @@
                                         VerticalAlignment="Center"
                                         FontFamily="Segoe Fluent Icons"
                                         FontSize="24"
-                                        Foreground="{StaticResource WinUiQuietTextBrush}"
+                                        Foreground="{StaticResource WinUiAccentBrush}"
                                         Glyph="&#xE8E5;" />
                                 </Border>
                                 <StackPanel Spacing="5">
                                     <TextBlock
-                                        HorizontalAlignment="Center"
+                                        x:Name="NoDataTitleText"
+                                        HorizontalAlignment="Left"
                                         FontSize="24"
                                         FontWeight="SemiBold"
-                                        Text="No game loaded" />
+                                        Text="Open a game data file" />
                                     <TextBlock
+                                        x:Name="NoDataDescriptionText"
                                         MaxWidth="460"
-                                        HorizontalAlignment="Center"
+                                        HorizontalAlignment="Left"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                         LineHeight="20"
-                                        Text="Open a GameMaker data file to begin."
-                                        TextAlignment="Center"
+                                        Text="Browse, inspect, and edit resources from a supported GameMaker data file."
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                             </StackPanel>
 
                             <StackPanel
                                 Grid.Row="1"
-                                HorizontalAlignment="Center"
+                                HorizontalAlignment="Left"
                                 Spacing="8">
-                                <Button
-                                    HorizontalAlignment="Center"
-                                    Click="OpenButton_Click"
-                                    Padding="18,9">
-                                    <StackPanel Orientation="Horizontal" Spacing="9">
-                                        <FontIcon
-                                            FontFamily="Segoe Fluent Icons"
-                                            FontSize="14"
-                                            Glyph="&#xE8E5;" />
-                                        <TextBlock Text="Open data file" />
-                                    </StackPanel>
-                                </Button>
-
-                                <Grid
-                                    Width="440"
-                                    ColumnSpacing="14">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Border
-                                        Height="1"
-                                        VerticalAlignment="Center"
-                                        Background="{ThemeResource ControlStrokeColorDefaultBrush}"
-                                        Opacity="0.55" />
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                        Text="or" />
-                                    <Border
-                                        Grid.Column="2"
-                                        Height="1"
-                                        VerticalAlignment="Center"
-                                        Background="{ThemeResource ControlStrokeColorDefaultBrush}"
-                                        Opacity="0.55" />
-                                </Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button
+                                        AutomationProperties.Name="Open data file"
+                                        Click="OpenButton_Click"
+                                        Padding="18,9"
+                                        Style="{StaticResource AccentButtonStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="9">
+                                            <FontIcon FontFamily="Segoe Fluent Icons" FontSize="14" Glyph="&#xE8E5;" />
+                                            <TextBlock Text="Open data file" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button
+                                        AutomationProperties.Name="Create new blank data file"
+                                        Click="NewDataFileMenuItem_Click"
+                                        Content="New blank file"
+                                        Padding="16,9" />
+                                </StackPanel>
+                                <TextBlock
+                                    MaxWidth="560"
+                                    Style="{StaticResource MutedDescriptionTextStyle}"
+                                    Text="Before editing, keep a backup of the original file. Supported formats: .win, .unx, .ios, and .droid." />
                             </StackPanel>
 
                             <Border
@@ -857,6 +896,7 @@
                                 MinHeight="144"
                                 HorizontalAlignment="Stretch"
                                 AllowDrop="True"
+                                AutomationProperties.Name="Data file drop zone. Drop a supported GameMaker data file here."
                                 Background="{StaticResource WinUiDropZoneBackgroundBrush}"
                                 BorderBrush="{StaticResource WinUiDropZoneStrokeBrush}"
                                 BorderThickness="1"
@@ -900,11 +940,12 @@
                                             Foreground="{StaticResource WinUiQuietTextBrush}"
                                             FontSize="12"
                                             LineHeight="17"
-                                            Text="Supports .win, .unx, .ios, and .droid files."
+                                            Text="Drop one supported file to open it in the editor."
                                             TextWrapping="Wrap" />
                                     </StackPanel>
                                     <Button
                                         Grid.Column="2"
+                                        AutomationProperties.Name="Browse for data file"
                                         VerticalAlignment="Center"
                                         Click="OpenButton_Click"
                                         MinWidth="92"
@@ -1872,6 +1913,7 @@
                                                     Padding="10">
                                                     <Image
                                                         x:Name="SpriteLargePreviewImage"
+                                                        AutomationProperties.Name="Large sprite preview. Activate to open full preview."
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center"
                                                         MaxHeight="520"
@@ -2191,6 +2233,7 @@
                                     Padding="8">
                                     <Image
                                         x:Name="SpritePreviewImage"
+                                        AutomationProperties.Name="Sprite preview. Activate to open full preview."
                                         HorizontalAlignment="Center"
                                         VerticalAlignment="Center"
                                         MaxHeight="208"
@@ -2619,6 +2662,7 @@
                                 Text="Zoom" />
                             <Slider
                                 x:Name="RoomPreviewZoomSlider"
+                                AutomationProperties.Name="Room preview zoom"
                                 Width="170"
                                 Minimum="0.25"
                                 Maximum="4"
@@ -3365,6 +3409,7 @@
                                                 PointerReleased="RoomTileSourcePreviewCanvas_PointerReleased">
                                                 <Image
                                                     x:Name="RoomTileSourcePreviewImage"
+                                                    AutomationProperties.Name="Room tile source preview"
                                                     Stretch="Fill" />
                                                 <Border
                                                     x:Name="RoomTileSourcePreviewSelector"
@@ -5378,6 +5423,7 @@
                             <Slider
                                 x:Name="TexturePreviewZoomSlider"
                                 Grid.Column="3"
+                                AutomationProperties.Name="Texture preview zoom"
                                 VerticalAlignment="Center"
                                 IsEnabled="False"
                                 Maximum="4"
@@ -5439,6 +5485,7 @@
                                     PointerPressed="TexturePreviewSurface_PointerPressed">
                                     <Image
                                         x:Name="TexturePreviewImage"
+                                        AutomationProperties.Name="Texture preview. Activate to open full preview."
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Top"
                                         PointerPressed="TexturePreviewSurface_PointerPressed"
@@ -5698,14 +5745,12 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border
-                                            Padding="10,9"
-                                            Background="{StaticResource WinUiPanelBackgroundBrush}"
-                                            BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
+                                        <Button
+                                            AutomationProperties.Name="{Binding Path}"
+                                            Click="RecentFileCard_Click"
+                                            Style="{StaticResource RecentFileCardButtonStyle}"
                                             Tag="{Binding Path}"
-                                            Tapped="RecentFileCard_Tapped">
+                                            ToolTipService.ToolTip="{Binding Path}">
                                             <Grid ColumnSpacing="9">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="Auto" />
@@ -5765,7 +5810,7 @@
                                                     </Border>
                                                 </Grid>
                                             </Grid>
-                                        </Border>
+                                        </Button>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
@@ -5866,8 +5911,11 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     TextWrapping="Wrap" />
             </StackPanel>
-            <Grid
+            <Expander
                 Grid.Row="1"
+                Header="Script console"
+                IsExpanded="False">
+            <Grid
                 ColumnSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -5899,6 +5947,7 @@
                     <ToolTipService.ToolTip>Run command</ToolTipService.ToolTip>
                 </Button>
             </Grid>
+            </Expander>
             <Grid Grid.Row="2" RowSpacing="3">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -5907,9 +5956,12 @@
                 <TextBlock
                     FontSize="12"
                     Foreground="{StaticResource WinUiQuietTextBrush}"
-                    Text="Load status" />
+                    Text="Activity" />
                 <Border
+                    x:Name="ActivityStatusBorder"
                     Grid.Row="1"
+                    AutomationProperties.LiveSetting="Polite"
+                    AutomationProperties.Name="Application activity"
                     Background="{StaticResource WinUiHeaderBackgroundBrush}"
                     BorderBrush="{StaticResource WinUiPanelStrokeBrush}"
                     BorderThickness="1"
@@ -5925,12 +5977,14 @@
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Border
+                            x:Name="ActivityStatusIconWell"
                             Width="20"
                             Height="20"
                             VerticalAlignment="Center"
                             Background="{StaticResource WinUiIconWellBrush}"
                             CornerRadius="5">
                             <FontIcon
+                                x:Name="ActivityStatusIcon"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontFamily="Segoe Fluent Icons"
@@ -5945,6 +5999,8 @@
                             VerticalScrollBarVisibility="Auto">
                             <TextBlock
                                 x:Name="StatusBox"
+                                AutomationProperties.LiveSetting="Polite"
+                                AutomationProperties.Name="Current application activity"
                                 VerticalAlignment="Center"
                                 FontSize="12"
                                 Foreground="{StaticResource WinUiQuietTextBrush}"

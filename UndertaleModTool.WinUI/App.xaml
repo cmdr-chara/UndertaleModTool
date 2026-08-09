@@ -15,15 +15,15 @@
             <Color x:Key="WinUiPanelBackgroundColor">#222428</Color>
             <Color x:Key="WinUiPanelBackgroundAltColor">#2A2D33</Color>
             <Color x:Key="WinUiPanelStrokeColor">#3D424A</Color>
-            <Color x:Key="WinUiAccentColor">#9BA3AD</Color>
-            <Color x:Key="WinUiAccentMutedColor">#30343A</Color>
-            <Color x:Key="SystemAccentColor">#8F98A3</Color>
-            <Color x:Key="SystemAccentColorLight1">#A7AFB8</Color>
-            <Color x:Key="SystemAccentColorLight2">#C2C8D0</Color>
-            <Color x:Key="SystemAccentColorLight3">#EEF1F4</Color>
-            <Color x:Key="SystemAccentColorDark1">#8F98A3</Color>
-            <Color x:Key="SystemAccentColorDark2">#747D88</Color>
-            <Color x:Key="SystemAccentColorDark3">#59616B</Color>
+            <Color x:Key="WinUiAccentColor">#F06A62</Color>
+            <Color x:Key="WinUiAccentMutedColor">#432D2F</Color>
+            <Color x:Key="SystemAccentColor">#F06A62</Color>
+            <Color x:Key="SystemAccentColorLight1">#F4837C</Color>
+            <Color x:Key="SystemAccentColorLight2">#F7AAA5</Color>
+            <Color x:Key="SystemAccentColorLight3">#FCE0DE</Color>
+            <Color x:Key="SystemAccentColorDark1">#D85752</Color>
+            <Color x:Key="SystemAccentColorDark2">#B84543</Color>
+            <Color x:Key="SystemAccentColorDark3">#873637</Color>
 
             <SolidColorBrush x:Key="WinUiShellBackgroundBrush" Color="{StaticResource WinUiShellBackgroundColor}" />
             <SolidColorBrush x:Key="WinUiShellOverlayBrush" Color="{StaticResource WinUiShellBackgroundColor}" Opacity="0.88" />
@@ -34,14 +34,17 @@
             <SolidColorBrush x:Key="WinUiPanelStrokeBrush" Color="{StaticResource WinUiPanelStrokeColor}" />
             <SolidColorBrush x:Key="WinUiAccentBrush" Color="{StaticResource WinUiAccentColor}" />
             <SolidColorBrush x:Key="WinUiAccentMutedBrush" Color="{StaticResource WinUiAccentMutedColor}" />
+            <SolidColorBrush x:Key="WinUiAccentSubtleBrush" Color="#35282A" />
             <SolidColorBrush x:Key="WinUiQuietTextBrush" Color="#C3C8D0" />
             <SolidColorBrush x:Key="WinUiMutedTextBrush" Color="#969DA8" />
+            <SolidColorBrush x:Key="WinUiErrorBrush" Color="#F28A83" />
+            <SolidColorBrush x:Key="WinUiSuccessBrush" Color="#9BC2A5" />
             <SolidColorBrush x:Key="WinUiIconWellBrush" Color="#2B2E34" />
             <SolidColorBrush x:Key="WinUiDropZoneBackgroundBrush" Color="#202226" Opacity="0.96" />
             <SolidColorBrush x:Key="WinUiDropZoneStrokeBrush" Color="#555C66" Opacity="0.82" />
-            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#8F98A3" />
-            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#8F98A3" />
-            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#747D88" />
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#F06A62" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E15F59" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#C64E4B" />
             <SolidColorBrush x:Key="AccentFillColorDisabledBrush" Color="#555B64" />
             <SolidColorBrush x:Key="AccentTextFillColorPrimaryBrush" Color="#111317" />
             <SolidColorBrush x:Key="AccentTextFillColorSecondaryBrush" Color="#171A1F" />
@@ -50,17 +53,17 @@
             <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#E4E8EE" />
             <SolidColorBrush x:Key="TextOnAccentFillColorDisabledBrush" Color="#8D949E" />
 
-            <SolidColorBrush x:Key="AccentButtonBackground" Color="#4A525D" />
-            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#58616D" />
-            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#697380" />
+            <SolidColorBrush x:Key="AccentButtonBackground" Color="#D95752" />
+            <SolidColorBrush x:Key="AccentButtonBackgroundPointerOver" Color="#EA6660" />
+            <SolidColorBrush x:Key="AccentButtonBackgroundPressed" Color="#BD4745" />
             <SolidColorBrush x:Key="AccentButtonBackgroundDisabled" Color="#30343A" />
             <SolidColorBrush x:Key="AccentButtonForeground" Color="#F7F9FC" />
             <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FFFFFF" />
             <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#FFFFFF" />
             <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#8D949E" />
-            <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="#68717D" />
-            <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="#808A96" />
-            <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="#9EA7B2" />
+            <SolidColorBrush x:Key="AccentButtonBorderBrush" Color="#F17A73" />
+            <SolidColorBrush x:Key="AccentButtonBorderBrushPointerOver" Color="#F4938D" />
+            <SolidColorBrush x:Key="AccentButtonBorderBrushPressed" Color="#D75A56" />
             <SolidColorBrush x:Key="AccentButtonBorderBrushDisabled" Color="#30343A" />
 
             <SolidColorBrush x:Key="ContentDialogForeground" Color="#F1F3F6" />
@@ -76,9 +79,9 @@
             <SolidColorBrush x:Key="ListViewItemBackgroundSelected" Color="#343840" />
             <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPointerOver" Color="#3C414A" />
             <SolidColorBrush x:Key="ListViewItemBackgroundSelectedPressed" Color="#454B55" />
-            <SolidColorBrush x:Key="ListViewItemSelectedBorderBrush" Color="#737B86" />
-            <SolidColorBrush x:Key="ListViewItemSelectedPointerOverBorderBrush" Color="#89929D" />
-            <SolidColorBrush x:Key="ListViewItemSelectedPressedBorderBrush" Color="#A2AAB4" />
+            <SolidColorBrush x:Key="ListViewItemSelectedBorderBrush" Color="#E56861" />
+            <SolidColorBrush x:Key="ListViewItemSelectedPointerOverBorderBrush" Color="#F17D76" />
+            <SolidColorBrush x:Key="ListViewItemSelectedPressedBorderBrush" Color="#C84E4B" />
             <SolidColorBrush x:Key="ListViewItemForegroundSelected" Color="#FFFFFF" />
             <SolidColorBrush x:Key="ListViewItemForegroundSelectedPointerOver" Color="#FFFFFF" />
             <SolidColorBrush x:Key="ListViewItemForegroundSelectedPressed" Color="#FFFFFF" />
@@ -119,12 +122,39 @@
             <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="#606975" />
             <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#A3ABB4" />
 
-            <SolidColorBrush x:Key="SliderTrackValueFill" Color="#858E99" />
-            <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#9BA3AD" />
-            <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B3BAC2" />
-            <SolidColorBrush x:Key="SliderThumbBackground" Color="#9BA3AD" />
-            <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#B3BAC2" />
-            <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#D0D5DB" />
+            <SolidColorBrush x:Key="SliderTrackValueFill" Color="#D95A55" />
+            <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#EF6B64" />
+            <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#C34B48" />
+            <SolidColorBrush x:Key="SliderThumbBackground" Color="#F06A62" />
+            <SolidColorBrush x:Key="SliderThumbBackgroundPointerOver" Color="#F48A83" />
+            <SolidColorBrush x:Key="SliderThumbBackgroundPressed" Color="#FFD2CF" />
+
+            <Style x:Key="PanelHeaderTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="16" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
+            </Style>
+            <Style x:Key="MutedDescriptionTextStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{StaticResource WinUiMutedTextBrush}" />
+                <Setter Property="TextWrapping" Value="WrapWholeWords" />
+            </Style>
+            <Style x:Key="CompactIconButtonStyle" TargetType="Button">
+                <Setter Property="MinWidth" Value="34" />
+                <Setter Property="MinHeight" Value="34" />
+                <Setter Property="Padding" Value="7" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="RecentFileCardButtonStyle" TargetType="Button">
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="10,9" />
+                <Setter Property="Background" Value="{StaticResource WinUiCardBackgroundBrush}" />
+                <Setter Property="BorderBrush" Value="{StaticResource WinUiPanelStrokeBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="6" />
+            </Style>
 
             <SolidColorBrush x:Key="ScrollBarThumbFill" Color="#747C87" Opacity="0.78" />
             <SolidColorBrush x:Key="ScrollBarThumbFillPointerOver" Color="#9AA3AD" Opacity="0.96" />

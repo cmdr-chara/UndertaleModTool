@@ -197,6 +197,7 @@ public sealed partial class MainPage : Page, IScriptInterface
     private double _scriptProgressMaximum = 1;
     private string _scriptProgressMessage = "Script progress";
     private string _scriptProgressStatus = string.Empty;
+    private bool _isNoDataBrowserState = true;
 
     public MainPage()
     {
@@ -475,16 +476,13 @@ public sealed partial class MainPage : Page, IScriptInterface
             await OpenRecentPathAsync(path);
     }
 
-    private async void RecentFileCard_Tapped(object sender, TappedRoutedEventArgs e)
+    private async void RecentFileCard_Click(object sender, RoutedEventArgs e)
     {
         if (!OpenButton.IsEnabled)
             return;
 
         if (sender is FrameworkElement { Tag: string path })
-        {
-            e.Handled = true;
             await OpenRecentPathAsync(path);
-        }
     }
 
     private void ClearRecentFilesButton_Click(object sender, RoutedEventArgs e)
@@ -622,6 +620,7 @@ public sealed partial class MainPage : Page, IScriptInterface
         DetailsTitleText.Text = "Details";
         SetResourceFilterText(string.Empty);
         SetNoDataBrowserState(isNoData: false);
+        SetLoadingState(true, path);
         HideEditors();
 
         try
@@ -649,19 +648,23 @@ public sealed partial class MainPage : Page, IScriptInterface
             SaveButton.IsEnabled = false;
             SaveAsButton.IsEnabled = !loadedGame.Data.UnsupportedBytecodeVersion;
             CommandBox.IsEnabled = true;
+            SetLoadingState(false);
             SetNoDataBrowserState(isNoData: false);
             UpdateResourceCommandButtons();
             UpdateCommandStates();
-            StatusBox.Text = loadedGame.Status;
+            SetLoadActivity(loadedGame.Status, "WinUiSuccessBrush", "\uE73E");
             RememberOpenedFile(path);
             UpdateDeltamodCommunityExportState();
         }
         catch (Exception ex)
         {
-            GameTitleText.Text = "Load failed";
-            StatusBox.Text = ex.ToString();
             ClearLoadedDataState();
             SetNoDataBrowserState(isNoData: true);
+            SetLoadErrorState(path);
+            SetLoadActivity(
+                $"Could not open the data file. {ex.Message}",
+                "WinUiErrorBrush",
+                "\uEA39");
             UpdateWindowTitle();
         }
         finally
@@ -731,6 +734,41 @@ public sealed partial class MainPage : Page, IScriptInterface
         {
             _saveTask = null;
         }
+    }
+
+    private void SetLoadingState(bool isLoading, string? path = null)
+    {
+        LoadingStatePanel.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+        if (!isLoading)
+            return;
+
+        NoDataEmptyStatePanel.Visibility = Visibility.Collapsed;
+        LoadingPathText.Text = path ?? string.Empty;
+        SetLoadActivity("Loading data file...", "WinUiAccentBrush", "\uE895");
+    }
+
+    private void SetLoadErrorState(string path)
+    {
+        string fileName = Path.GetFileName(path);
+        GameTitleText.Text = "Load failed";
+        FilePathText.Text = path;
+        NoDataTitleText.Text = string.IsNullOrWhiteSpace(fileName)
+            ? "This data file could not be opened"
+            : $"Could not open {fileName}";
+        NoDataDescriptionText.Text =
+            "The file may be damaged, unsupported, or in use. Try a backup copy or choose another supported GameMaker data file.";
+    }
+
+    private void SetLoadActivity(string message, string foregroundResourceKey, string glyph)
+    {
+        StatusBox.Text = message;
+        if (Application.Current.Resources[foregroundResourceKey] is Brush foreground)
+        {
+            StatusBox.Foreground = foreground;
+            ActivityStatusIcon.Foreground = foreground;
+            ActivityStatusBorder.BorderBrush = foreground;
+        }
+        ActivityStatusIcon.Glyph = glyph;
     }
 
     private async System.Threading.Tasks.Task<bool> SaveCurrentFileCoreAsync()
@@ -5274,6 +5312,8 @@ public sealed partial class MainPage : Page, IScriptInterface
 
     private void SetNoDataBrowserState(bool isNoData)
     {
+        _isNoDataBrowserState = isNoData;
+        LoadingStatePanel.Visibility = Visibility.Collapsed;
         NoDataEmptyStatePanel.Visibility = isNoData ? Visibility.Visible : Visibility.Collapsed;
         RecentFilesPanel.Visibility = isNoData ? Visibility.Visible : Visibility.Collapsed;
         ResourceItemsPane.Visibility = isNoData ? Visibility.Collapsed : Visibility.Visible;
@@ -5284,24 +5324,44 @@ public sealed partial class MainPage : Page, IScriptInterface
         ResourceList.IsEnabled = !isNoData;
         ResourceFilterBox.IsEnabled = !isNoData;
         CategoryList.Opacity = isNoData ? 0.62 : 1;
-        ResourceItemsColumn.Width = isNoData ? new GridLength(0) : new GridLength(280);
-        RecentColumn.Width = isNoData ? new GridLength(360) : new GridLength(0);
         Grid.SetColumn(DetailsScrollViewer, isNoData ? 1 : 2);
         Grid.SetColumnSpan(DetailsScrollViewer, isNoData ? 2 : 1);
         if (isNoData)
         {
-            CategoryColumn.Width = new GridLength(280);
+            NoDataTitleText.Text = "Open a game data file";
+            NoDataDescriptionText.Text = "Browse, inspect, and edit resources from a supported GameMaker data file.";
             CategoryList.ItemsSource = NoDataCategories.Value;
             CategoryList.SelectedIndex = -1;
             ResourceList.ItemsSource = null;
         }
-        else
-        {
-            CategoryColumn.Width = new GridLength(270);
-            ResourceItemsColumn.Width = new GridLength(280);
-        }
+
+        UpdateBrowserColumnWidths(ActualWidth);
 
         UpdateRecentFileUi();
+    }
+
+    private void MainPage_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        UpdateBrowserColumnWidths(e.NewSize.Width);
+    }
+
+    private void UpdateBrowserColumnWidths(double pageWidth)
+    {
+        double width = pageWidth > 0 ? pageWidth : 1400;
+        bool compact = width < 1100;
+        bool spacious = width >= 1500;
+
+        if (_isNoDataBrowserState)
+        {
+            CategoryColumn.Width = new GridLength(compact ? 190 : spacious ? 280 : 235);
+            ResourceItemsColumn.Width = new GridLength(0);
+            RecentColumn.Width = new GridLength(compact ? 270 : spacious ? 370 : 320);
+            return;
+        }
+
+        CategoryColumn.Width = new GridLength(compact ? 190 : spacious ? 290 : 245);
+        ResourceItemsColumn.Width = new GridLength(compact ? 220 : spacious ? 310 : 265);
+        RecentColumn.Width = new GridLength(0);
     }
 
     private void HideNamedResourceEditor()
