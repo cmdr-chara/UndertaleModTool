@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.CodeAnalysis;
 using Underanalyzer.Decompiler;
 using UndertaleModLib;
 using UndertaleModLib.Compiler;
@@ -112,7 +113,10 @@ public partial class Program : IScriptInterface
         while (true)
         {
             Console.Write($"{message} (Y/N): ");
-            string input = ReadLineWithFallback()?.Trim().ToLower();
+            string line = ReadLineWithFallback();
+            if (line is null)
+                throw new ScriptCancelledException("Input ended before the question was answered.");
+            string input = line.Trim().ToLowerInvariant();
 
             if (string.IsNullOrEmpty(input))
                 Console.WriteLine("Please enter Y or N.");
@@ -149,7 +153,11 @@ public partial class Program : IScriptInterface
     {
         // In order to be similar to GUI output, we strip everything past a newline in "defaultValue" should multiline be disabled
         if (!allowMultiline)
-            defaultText = defaultText.Remove(defaultText.IndexOf('\n'));
+        {
+            int newline = defaultText?.IndexOf('\n') ?? -1;
+            if (newline >= 0)
+                defaultText = defaultText[..newline];
+        }
 
         Console.WriteLine("----------------------OUTPUT----------------------");
         Console.WriteLine(title);
@@ -478,15 +486,15 @@ public partial class Program : IScriptInterface
     /// <inheritdoc/>
     public string GetDecompiledText(UndertaleCode code, GlobalDecompileContext context = null, IDecompileSettings settings = null)
     {
+        if (code is null)
+            return "";
         if (code.ParentEntry is not null)
             return $"// This code entry is a reference to an anonymous function within \"{code.ParentEntry.Name.Content}\", decompile that instead.";
 
         GlobalDecompileContext decompileContext = context is null ? new(Data) : context;
         try
         {
-            return code != null
-                ? new DecompileContext(decompileContext, code, settings ?? Data.ToolInfo.DecompilerSettings).DecompileToString()
-                : "";
+            return new DecompileContext(decompileContext, code, settings ?? Data.ToolInfo.DecompilerSettings).DecompileToString();
         }
         catch (Exception e)
         {
@@ -503,12 +511,14 @@ public partial class Program : IScriptInterface
     /// <inheritdoc/>
     public string GetDisassemblyText(UndertaleCode code)
     {
+        if (code is null)
+            return "";
         if (code.ParentEntry is not null)
             return $"; This code entry is a reference to an anonymous function within \"{code.ParentEntry.Name.Content}\", disassemble that instead.";
 
         try
         {
-            return code != null ? code.Disassemble(Data.Variables, Data.CodeLocals?.For(code), Data.CodeLocals is null) : "";
+            return code.Disassemble(Data.Variables, Data.CodeLocals?.For(code), Data.CodeLocals is null);
         }
         catch (Exception e)
         {
@@ -543,37 +553,36 @@ public partial class Program : IScriptInterface
         {
             bool isEnterWithoutShiftPressed = false;
             ConsoleKeyInfo keyInfo;
-            do
+            try
             {
-                keyInfo = Console.ReadKey();
-                //result += keyInfo.KeyChar;
-
-                // If Enter is pressed without shift
-                if (((keyInfo.Modifiers & ConsoleModifiers.Shift) == 0) && (keyInfo.Key == ConsoleKey.Enter))
-                    isEnterWithoutShiftPressed = true;
-
-                else
+                do
                 {
-                    // If we have Enter + any other modifier pressed, append newline. Otherwise, just the content.
-                    if (keyInfo.Key == ConsoleKey.Enter)
-                    {
-                        result += "\n";
-                        Console.WriteLine();
-                    }
-                    // If backspace, display new empty char and move one back
-                    // TODO: There's some weird bug with ctrl+backspace, i'll ignore it for now.
-                    // Also make some of the multiline-backspace better.
-                    else if ((keyInfo.Key == ConsoleKey.Backspace) && (result.Length > 0))
-                    {
-                        Console.Write(' ');
-                        Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
-                        result = result.Remove(result.Length - 1);
-                    }
-                    else
-                        result += keyInfo.KeyChar;
-                }
+                    keyInfo = Console.ReadKey();
 
-            } while (!isEnterWithoutShiftPressed);
+                    if (((keyInfo.Modifiers & ConsoleModifiers.Shift) == 0) && (keyInfo.Key == ConsoleKey.Enter))
+                        isEnterWithoutShiftPressed = true;
+                    else
+                    {
+                        if (keyInfo.Key == ConsoleKey.Enter)
+                        {
+                            result += "\n";
+                            Console.WriteLine();
+                        }
+                        else if ((keyInfo.Key == ConsoleKey.Backspace) && (result.Length > 0))
+                        {
+                            Console.Write(' ');
+                            Console.SetCursorPosition(Console.CursorLeft - 1, Console.CursorTop);
+                            result = result.Remove(result.Length - 1);
+                        }
+                        else
+                            result += keyInfo.KeyChar;
+                    }
+                } while (!isEnterWithoutShiftPressed);
+            }
+            catch (InvalidOperationException) when (Console.IsInputRedirected)
+            {
+                throw new ScriptCancelledException("Input ended before text was entered.");
+            }
         }
 
         Console.WriteLine("--------------------------------------------------");
@@ -647,27 +656,39 @@ public partial class Program : IScriptInterface
         }
         try
         {
-            CancellationTokenSource source = new CancellationTokenSource(100);
-            CancellationToken token = source.Token;
-            CSharpScript.EvaluateAsync(File.ReadAllText(path, Encoding.UTF8), CliScriptOptions.WithFilePath(path).WithFileEncoding(Encoding.UTF8), this, typeof(IScriptInterface), token);
+            IReadOnlyList<Diagnostic> diagnostics = CompileUMTScript(
+                File.ReadAllText(path, Encoding.UTF8), path, CliScriptOptions);
+            string errors = string.Join(Environment.NewLine,
+                diagnostics.Where(diagnostic => diagnostic.Severity == DiagnosticSeverity.Error));
+            if (errors.Length == 0)
+            {
+                ScriptExecutionSuccess = true;
+                ScriptErrorMessage = "";
+                ScriptErrorType = "";
+                return true;
+            }
+
+            ScriptError(errors, "Script compile error");
+            ScriptExecutionSuccess = false;
+            ScriptErrorMessage = errors;
+            ScriptErrorType = "CompilationErrorException";
+            return false;
         }
-        catch (CompilationErrorException exc)
+        catch (Exception exc)
         {
             ScriptError(exc.Message, "Script compile error");
             ScriptExecutionSuccess = false;
             ScriptErrorMessage = exc.Message;
-            ScriptErrorType = "CompilationErrorException";
+            ScriptErrorType = exc.GetType().Name;
             return false;
         }
-        catch (Exception)
-        {
-            // Using the 100 MS timer it can time out before successfully running, compilation errors are fast enough to get through.
-            ScriptExecutionSuccess = true;
-            ScriptErrorMessage = "";
-            ScriptErrorType = "";
-            return true;
-        }
-        return true;
+    }
+
+    internal static IReadOnlyList<Diagnostic> CompileUMTScript(string source, string path, ScriptOptions options)
+    {
+        return CSharpScript.Create(source,
+            options.WithFilePath(path).WithFileEncoding(Encoding.UTF8),
+            typeof(IScriptInterface)).Compile();
     }
 
     public void ReassignGUIDs(string guid, uint objectIndex)
@@ -708,8 +729,11 @@ public partial class Program : IScriptInterface
             uint objIndex = 0;
             while (!objFound)
             {
-                string objectIndex = SimpleTextInput("Object could not be found. Please enter it below:",
-                    "Object enter box.", "", false).ToLower();
+                string input = SimpleTextInput("Object could not be found. Please enter it below:",
+                    "Object enter box.", "", false);
+                if (input is null)
+                    throw new ScriptCancelledException("Input ended before an object was selected.");
+                string objectIndex = input.ToLowerInvariant();
                 for (int i = 0; i < Data.GameObjects.Count; i++)
                 {
                     if (Data.GameObjects[i].Name.Content.Equals(objectIndex, StringComparison.InvariantCultureIgnoreCase))
@@ -734,8 +758,11 @@ public partial class Program : IScriptInterface
             uint objIndex = 0;
             while (!objFound)
             {
-                string objectIndex = SimpleTextInput("Multiple objects were found. Select only one object below from the set, or, if none below match, some other object name:",
-                    "Object enter box.", gameObjectNames, true).ToLower();
+                string input = SimpleTextInput("Multiple objects were found. Select only one object below from the set, or, if none below match, some other object name:",
+                    "Object enter box.", gameObjectNames, true);
+                if (input is null)
+                    throw new ScriptCancelledException("Input ended before an object was selected.");
+                string objectIndex = input.ToLowerInvariant();
                 for (int i = 0; i < Data.GameObjects.Count; i++)
                 {
                     if (Data.GameObjects[i].Name.Content.Equals(objectIndex, StringComparison.InvariantCultureIgnoreCase))

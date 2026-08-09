@@ -349,6 +349,67 @@ public partial class Program : IScriptInterface
         }
     }
 
+    internal static bool TryParseReplacementMappings(IEnumerable<string> mappings, out Dictionary<string, FileInfo> result, out string error)
+    {
+        result = new Dictionary<string, FileInfo>(StringComparer.Ordinal);
+        error = null;
+
+        foreach (string mapping in mappings ?? [])
+        {
+            int separator = mapping?.IndexOf('=') ?? -1;
+            if (separator <= 0 || separator == mapping.Length - 1)
+            {
+                error = $"'{mapping}' is malformed; expected 'name=path'.";
+                return false;
+            }
+
+            string name = mapping[..separator].Trim();
+            string path = mapping[(separator + 1)..].Trim();
+            if (name.Length == 0 || path.Length == 0)
+            {
+                error = $"'{mapping}' contains an empty name or path.";
+                return false;
+            }
+            if (!result.TryAdd(name, new FileInfo(path)))
+            {
+                error = $"Replacement name '{name}' was specified more than once.";
+                return false;
+            }
+        }
+
+        if (result.ContainsKey(UMT_REPLACE_ALL) && result.Count != 1)
+        {
+            error = $"'{UMT_REPLACE_ALL}' cannot be combined with individual replacements.";
+            return false;
+        }
+        return true;
+    }
+
+    internal static void WriteFileViaUniqueTemp(string outputPath, Action<Stream> write, bool overwrite = true)
+    {
+        string fullOutputPath = Path.GetFullPath(outputPath);
+        string directory = Path.GetDirectoryName(fullOutputPath) ?? Environment.CurrentDirectory;
+        Directory.CreateDirectory(directory);
+        string tempPath = Path.Combine(directory, $".{Path.GetFileName(fullOutputPath)}.{Guid.NewGuid():N}.tmp");
+        bool createdTempFile = false;
+
+        try
+        {
+            using (FileStream stream = new(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+            {
+                createdTempFile = true;
+                write(stream);
+            }
+            File.Move(tempPath, fullOutputPath, overwrite);
+            createdTempFile = false;
+        }
+        finally
+        {
+            if (createdTempFile && File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
     public Program(FileInfo datafile, FileInfo[] scripts, FileInfo output, bool verbose = false, bool interactive = false)
     {
         this.Verbose = verbose;
@@ -379,7 +440,7 @@ public partial class Program : IScriptInterface
         this.Verbose = verbose;
         this.FilePath = datafile.FullName;
         this.ExePath = Environment.CurrentDirectory;
-        this.Data = ReadDataFile(datafile, verbose ? WarningHandler : null, verbose ? MessageHandler : null);
+        this.Data = ReadDataFile(datafile, verbose ? WarningHandler : DummyWarningHandler, verbose ? MessageHandler : DummyHandler);
         this.Output = output ?? new DirectoryInfo(datafile.DirectoryName);
 
         if (this.Verbose)
@@ -400,14 +461,22 @@ public partial class Program : IScriptInterface
         // If stdout flag is set, write new data to stdout and quit
         if (options.Stdout)
         {
-            if (options.Verbose) Console.WriteLine("Attempting to write new Data file to STDOUT...");
-            using MemoryStream ms = new MemoryStream();
-            UndertaleIO.Write(ms, data);
-            Console.OpenStandardOutput().Write(ms.ToArray(), 0, (int)ms.Length);
-            Console.Out.Flush();
-            if (options.Verbose) Console.WriteLine("Successfully wrote new Data file to STDOUT.");
-
-            return EXIT_SUCCESS;
+            try
+            {
+                if (options.Verbose) Console.Error.WriteLine("Attempting to write new data file to stdout...");
+                using MemoryStream ms = new();
+                UndertaleIO.Write(ms, data);
+                Stream stdout = Console.OpenStandardOutput();
+                ms.WriteTo(stdout);
+                stdout.Flush();
+                if (options.Verbose) Console.Error.WriteLine("Successfully wrote new data file to stdout.");
+                return EXIT_SUCCESS;
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"Could not write data file: {e.Message}");
+                return EXIT_FAILURE;
+            }
         }
 
         // If not STDOUT, write to file instead. Check first if we have permission to overwrite
@@ -418,11 +487,18 @@ public partial class Program : IScriptInterface
         }
 
         // We're not writing to STDOUT, and overwrite flag was given, so we write to specified file.
-        if (options.Verbose) Console.WriteLine($"Attempting to write new Data file to '{options.Output}'...");
-        using FileStream fs = options.Output.OpenWrite();
-        UndertaleIO.Write(fs, data);
-        if (options.Verbose) Console.WriteLine($"Successfully wrote new Data file to '{options.Output}'.");
-        return EXIT_SUCCESS;
+        try
+        {
+            if (options.Verbose) Console.WriteLine($"Attempting to write new Data file to '{options.Output}'...");
+            WriteFileViaUniqueTemp(options.Output.FullName, stream => UndertaleIO.Write(stream, data), options.Overwrite);
+            if (options.Verbose) Console.WriteLine($"Successfully wrote new Data file to '{options.Output}'.");
+            return EXIT_SUCCESS;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Could not write data file: {e.Message}");
+            return EXIT_FAILURE;
+        }
     }
 
     /// <summary>
@@ -449,8 +525,16 @@ public partial class Program : IScriptInterface
         // If interactive is enabled, launch the menu instead
         if (options.Interactive)
         {
-            program.RunInteractiveMenu();
-            return EXIT_SUCCESS;
+            try
+            {
+                program.RunInteractiveMenu();
+                return EXIT_SUCCESS;
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e.Message);
+                return EXIT_FAILURE;
+            }
         }
 
         // If we have any scripts to run, run every one of them
@@ -458,7 +542,15 @@ public partial class Program : IScriptInterface
         {
             foreach (FileInfo script in options.Scripts)
             {
-                program.RunCSharpFile(script.FullName);
+                try
+                {
+                    program.RunCSharpFile(script.FullName);
+                }
+                catch (Exception e)
+                {
+                    Console.Error.WriteLine($"Script execution failed: {e.Message}");
+                    return EXIT_FAILURE;
+                }
 
                 // If script execution failed, stop and return failure
                 if (!program.ScriptExecutionSuccess)
@@ -466,6 +558,8 @@ public partial class Program : IScriptInterface
                     Console.Error.WriteLine($"Script execution failed: {script.FullName}");
                     return EXIT_FAILURE;
                 }
+                if (program.ScriptCancelled)
+                    return EXIT_SUCCESS;
             }
         }
 
@@ -481,6 +575,8 @@ public partial class Program : IScriptInterface
                 Console.Error.WriteLine("Script execution failed");
                 return EXIT_FAILURE;
             }
+            if (program.ScriptCancelled)
+                return EXIT_SUCCESS;
         }
 
         // If script was cancelled by user, exit successfully without saving
@@ -495,7 +591,15 @@ public partial class Program : IScriptInterface
                 Console.Error.WriteLine($"'{options.Output}' already exists. Pass --overwrite to overwrite");
                 return EXIT_FAILURE;
             }
-            program.SaveDataFile(options.Output.FullName);
+            try
+            {
+                program.SaveDataFile(options.Output.FullName);
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(e.Message);
+                return EXIT_FAILURE;
+            }
         }
 
         return EXIT_SUCCESS;
@@ -513,14 +617,22 @@ public partial class Program : IScriptInterface
         {
             program = new Program(options.Datafile, options.Verbose);
         }
-        catch (FileNotFoundException e)
+        catch (Exception e)
         {
             Console.Error.WriteLine(e.Message);
             return EXIT_FAILURE;
         }
 
-        program.CliQuickInfo();
-        return EXIT_SUCCESS;
+        try
+        {
+            program.CliQuickInfo();
+            return EXIT_SUCCESS;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return EXIT_FAILURE;
+        }
     }
 
     /// <summary>
@@ -530,22 +642,38 @@ public partial class Program : IScriptInterface
     /// <returns><see cref="EXIT_SUCCESS"/> and <see cref="EXIT_FAILURE"/> for being successful and failing respectively</returns>
     private static int Dump(DumpOptions options)
     {
+        try
+        {
+            return DumpCore(options);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Export failed: {e.Message}");
+            return EXIT_FAILURE;
+        }
+    }
+
+    private static int DumpCore(DumpOptions options)
+    {
         Program program;
         try
         {
             program = new Program(options.Datafile, options.Verbose, options.Output);
         }
-        catch (FileNotFoundException e)
+        catch (Exception e)
         {
             Console.Error.WriteLine(e.Message);
             return EXIT_FAILURE;
         }
 
         bool requestedCodeDump = options.Code?.Length > 0;
+        bool successful = true;
+        int parallelFailures = 0;
         if (program.Data.IsYYC() && requestedCodeDump)
         {
             Console.WriteLine("The game was made with YYC (YoYo Compiler), which means that the code was compiled into the executable. " +
                               "There is thus no code to dump.");
+            successful = false;
         }
 
         // If user provided code to dump, dump code
@@ -565,35 +693,43 @@ public partial class Program : IScriptInterface
                     {
                         return;
                     }
-                    program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings);
+                    if (!program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings))
+                        Interlocked.Exchange(ref parallelFailures, 1);
                 });
+                successful &= parallelFailures == 0;
             }
             else
             {
                 foreach (string code in options.Code)
                 {
-                    program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings);
+                    successful &= program.DumpCodeEntry(code, globalDecompileContext, decompilerSettings);
                 }
             }
         }
+        else if (requestedCodeDump && !program.Data.IsYYC())
+        {
+            Console.Error.WriteLine("Data file contains no code entries.");
+            successful = false;
+        }
 
-        // If user wanted to dump strings, dump all of them in a text file
-        if (options.Strings)
-            program.DumpAllStrings();
+        try
+        {
+            if (options.Strings)
+                program.DumpAllStrings();
+            if (options.Textures)
+                successful &= program.DumpAllTextures();
+            if (options.Sprites)
+                program.DumpAllSprites().GetAwaiter().GetResult();
+            if (options.Sounds)
+                successful &= program.DumpAllSounds(options.CopyExternalAudio, options.GroupSoundsByAudioGroup);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Export failed: {e.Message}");
+            return EXIT_FAILURE;
+        }
 
-        // If user wanted to dump embedded textures, dump all of them
-        if (options.Textures)
-            program.DumpAllTextures();
-
-        // If user wanted to dump sprites, dump all of them
-        if (options.Sprites)
-            program.DumpAllSprites().Wait();
-
-        // If user wanted to dump sounds, dump all of them
-        if (options.Sounds)
-            program.DumpAllSounds(options.CopyExternalAudio, options.GroupSoundsByAudioGroup);
-
-        return EXIT_SUCCESS;
+        return successful ? EXIT_SUCCESS : EXIT_FAILURE;
     }
 
     /// <summary>
@@ -603,86 +739,123 @@ public partial class Program : IScriptInterface
     /// <returns><see cref="EXIT_SUCCESS"/> and <see cref="EXIT_FAILURE"/> for being successful and failing respectively</returns>
     private static int Replace(ReplaceOptions options)
     {
+        bool TryReplacement(Func<bool> replace)
+        {
+            try
+            {
+                return replace();
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"Replacement failed: {e.Message}");
+                return false;
+            }
+        }
+
+        if (options.Output is null)
+        {
+            Console.Error.WriteLine("The replace command requires --output.");
+            return EXIT_FAILURE;
+        }
+        if (!TryParseReplacementMappings(options.Code, out Dictionary<string, FileInfo> codeDict, out string error) ||
+            !TryParseReplacementMappings(options.Textures, out Dictionary<string, FileInfo> textureDict, out error))
+        {
+            Console.Error.WriteLine(error);
+            return EXIT_FAILURE;
+        }
+
         Program program;
         try
         {
             program = new Program(options.Datafile, null, options.Output, options.Verbose);
         }
-        catch (FileNotFoundException e)
+        catch (Exception e)
         {
             Console.Error.WriteLine(e.Message);
             return EXIT_FAILURE;
         }
 
-        // If user provided code to replace, replace them
-        if ((options.Code?.Length > 0) && (program.Data.Code.Count > 0))
+        try
         {
-            // get the values and put them into a dictionary for ease of use
-            Dictionary<string, FileInfo> codeDict = new Dictionary<string, FileInfo>();
-            foreach (string code in options.Code)
+            // If user provided code to replace, replace them
+            if ((options.Code?.Length > 0) && (program.Data.Code.Count > 0))
             {
-                string[] splitText = code.Split('=');
-
-                if (splitText.Length != 2)
+                // If user wants to replace all, we'll be handling it differently. Replace every file from the provided directory
+                if (codeDict.ContainsKey(UMT_REPLACE_ALL))
                 {
-                    Console.Error.WriteLine($"{code} is malformed! Should be of format 'name_of_code=./newCode.gml' instead!");
-                    return EXIT_FAILURE;
+                    string directory = codeDict[UMT_REPLACE_ALL].FullName;
+                    if (!Directory.Exists(directory))
+                    {
+                        Console.Error.WriteLine($"Replacement directory '{directory}' does not exist.");
+                        return EXIT_FAILURE;
+                    }
+                    foreach (FileInfo file in new DirectoryInfo(directory).GetFiles())
+                        if (!TryReplacement(() => program.ReplaceCodeEntryWithFile(Path.GetFileNameWithoutExtension(file.Name), file)))
+                            return EXIT_FAILURE;
                 }
-
-                codeDict.Add(splitText[0], new FileInfo(splitText[1]));
+                // Otherwise, just replace every file which was given
+                else
+                {
+                    foreach (KeyValuePair<string, FileInfo> keyValue in codeDict)
+                        if (!TryReplacement(() => program.ReplaceCodeEntryWithFile(keyValue.Key, keyValue.Value)))
+                            return EXIT_FAILURE;
+                }
             }
-
-            // If user wants to replace all, we'll be handling it differently. Replace every file from the provided directory
-            if (codeDict.ContainsKey(UMT_REPLACE_ALL))
+            else if (options.Code?.Length > 0)
             {
-                string directory = codeDict[UMT_REPLACE_ALL].FullName;
-                foreach (FileInfo file in new DirectoryInfo(directory).GetFiles())
-                    program.ReplaceCodeEntryWithFile(Path.GetFileNameWithoutExtension(file.Name), file);
-            }
-            // Otherwise, just replace every file which was given
-            else
-            {
-                foreach (KeyValuePair<string, FileInfo> keyValue in codeDict)
-                    program.ReplaceCodeEntryWithFile(keyValue.Key, keyValue.Value);
+                Console.Error.WriteLine("Data file contains no code entries to replace.");
+                return EXIT_FAILURE;
             }
         }
-
-        // If user provided texture to replace, replace them
-        if (options.Textures?.Length > 0)
+        catch (Exception e)
         {
-            // get the values and put them into a dictionary for ease of use
-            Dictionary<string, FileInfo> textureDict = new Dictionary<string, FileInfo>();
-            foreach (string texture in options.Textures)
-            {
-                string[] splitText = texture.Split('=');
+            Console.Error.WriteLine($"Replacement failed: {e.Message}");
+            return EXIT_FAILURE;
+        }
 
-                if (splitText.Length != 2)
+        try
+        {
+            // If user provided texture to replace, replace them
+            if (options.Textures?.Length > 0)
+            {
+                // If user wants to replace all, we'll be handling it differently. Replace every file from the provided directory
+                if (textureDict.ContainsKey(UMT_REPLACE_ALL))
                 {
-                    Console.Error.WriteLine($"{texture} is malformed! Should be of format 'Name=./new.png' instead!");
-                    return EXIT_FAILURE;
+                    string directory = textureDict[UMT_REPLACE_ALL].FullName;
+                    if (!Directory.Exists(directory))
+                    {
+                        Console.Error.WriteLine($"Replacement directory '{directory}' does not exist.");
+                        return EXIT_FAILURE;
+                    }
+                    foreach (FileInfo file in new DirectoryInfo(directory).GetFiles())
+                        if (!TryReplacement(() => program.ReplaceTextureWithFile(Path.GetFileNameWithoutExtension(file.Name), file)))
+                            return EXIT_FAILURE;
                 }
-
-                textureDict.Add(splitText[0], new FileInfo(splitText[1]));
+                // Otherwise, just replace every file which was given
+                else
+                {
+                    foreach ((string key, FileInfo value) in textureDict)
+                        if (!TryReplacement(() => program.ReplaceTextureWithFile(key, value)))
+                            return EXIT_FAILURE;
+                }
             }
-
-            // If user wants to replace all, we'll be handling it differently. Replace every file from the provided directory
-            if (textureDict.ContainsKey(UMT_REPLACE_ALL))
-            {
-                string directory = textureDict[UMT_REPLACE_ALL].FullName;
-                foreach (FileInfo file in new DirectoryInfo(directory).GetFiles())
-                    program.ReplaceTextureWithFile(Path.GetFileNameWithoutExtension(file.Name), file);
-            }
-            // Otherwise, just replace every file which was given
-            else
-            {
-                foreach ((string key, FileInfo value) in textureDict)
-                    program.ReplaceTextureWithFile(key, value);
-            }
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Replacement failed: {e.Message}");
+            return EXIT_FAILURE;
         }
 
         // If parameter to save file was given, save the data file
-        if (options.Output != null)
+        try
+        {
             program.SaveDataFile(options.Output.FullName);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return EXIT_FAILURE;
+        }
 
         return EXIT_SUCCESS;
     }
@@ -736,7 +909,7 @@ public partial class Program : IScriptInterface
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine($"Error occurred when loading project:\n{e}");
+            Console.Error.WriteLine($"Error occurred when loading project: {e.Message}");
             return EXIT_FAILURE;
         }
 
@@ -746,7 +919,15 @@ public partial class Program : IScriptInterface
         if (program.Verbose)
             Console.WriteLine($"Saving to destination data file");
 
-        program.SaveDataFile(options.Destination.FullName);
+        try
+        {
+            program.SaveDataFile(options.Destination.FullName);
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine(e.Message);
+            return EXIT_FAILURE;
+        }
 
         return EXIT_SUCCESS;
     }
@@ -891,17 +1072,17 @@ public partial class Program : IScriptInterface
     /// <param name="codeEntryName">The code entry name that should get dumped</param>
     /// <param name="context">Decompile context to use when dumping</param>
     /// <param name="settings">Settings to use for the decompiler</param>
-    private void DumpCodeEntry(string codeEntryName, GlobalDecompileContext context, IDecompileSettings settings)
+    private bool DumpCodeEntry(string codeEntryName, GlobalDecompileContext context, IDecompileSettings settings)
     {
         UndertaleCode code = Data.Code.ByName(codeEntryName);
 
         if (code == null)
         {
             Console.Error.WriteLine($"Data file does not contain a code entry named {codeEntryName}!");
-            return;
+            return false;
         }
 
-        DumpCodeEntry(code, context, settings);
+        return DumpCodeEntry(code, context, settings);
     }
 
     /// <summary>
@@ -910,7 +1091,7 @@ public partial class Program : IScriptInterface
     /// <param name="code">The code entry that should get dumped</param>
     /// <param name="context">Decompile context to use when dumping</param>
     /// <param name="settings">Settings to use for the decompiler</param>
-    private void DumpCodeEntry(UndertaleCode code, GlobalDecompileContext context, IDecompileSettings settings)
+    private bool DumpCodeEntry(UndertaleCode code, GlobalDecompileContext context, IDecompileSettings settings)
     {
         string directory = Path.Join(Output.FullName, "CodeEntries");
 
@@ -923,9 +1104,10 @@ public partial class Program : IScriptInterface
         if (dest is null)
         {
             Console.Error.WriteLine($"Failed to export code entry with name {code.Name?.Content}");
-            return;
+            return false;
         }
         File.WriteAllText(dest, GetDecompiledText(code, context, settings));
+        return true;
     }
 
     /// <summary>
@@ -953,9 +1135,10 @@ public partial class Program : IScriptInterface
     /// <summary>
     /// Dumps all embedded textures in a data file.
     /// </summary>
-    private void DumpAllTextures()
+    private bool DumpAllTextures()
     {
         string directory = Path.Join(Output.FullName, "EmbeddedTextures");
+        bool successful = true;
 
         Directory.CreateDirectory(directory);
 
@@ -965,18 +1148,20 @@ public partial class Program : IScriptInterface
                 Console.WriteLine($"Dumping {texture.Name}");
             if (texture.TextureData.Image is not GMImage image)
             {
-                Console.WriteLine($"{texture.Name} has no image assigned, skipping");
+                Console.Error.WriteLine($"{texture.Name} has no image assigned, skipping");
+                successful = false;
                 continue;
             }
             string dest = Paths.TryJoinVerifyWithinDirectory(directory, $"{texture.Name.Content}.png");
             if (dest is null)
             {
                 Console.Error.WriteLine($"Failed to export texture with name {texture.Name.Content}");
-                return;
+                return false;
             }
             using FileStream fs = new(dest, FileMode.Create);
             texture.TextureData.Image.SavePng(fs);
         }
+        return successful;
     }
 
     /// <summary>
@@ -1059,7 +1244,7 @@ public partial class Program : IScriptInterface
     /// <summary>
     /// Dumps all sounds in a data file.
     /// </summary>
-    private void DumpAllSounds(bool copyExternalAudio, bool groupByAudioGroup)
+    private bool DumpAllSounds(bool copyExternalAudio, bool groupByAudioGroup)
     {
         const string DefaultAudioGroupName = "audiogroup_default";
         byte[] emptyWavFileBytes = Convert.FromBase64String("UklGRiQAAABXQVZFZm10IBAAAAABAAIAQB8AAAB9AAAEABAAZGF0YQAAAAA=");
@@ -1072,6 +1257,7 @@ public partial class Program : IScriptInterface
         Dictionary<string, string> externalDirectories = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> createdDirectories = new(StringComparer.OrdinalIgnoreCase);
         HashSet<string> reservedDestinationPaths = new(StringComparer.OrdinalIgnoreCase);
+        bool successful = true;
 
         EnsureDirectory(baseDirectory);
 
@@ -1094,6 +1280,7 @@ public partial class Program : IScriptInterface
             else
                 File.Copy(job.SourcePath, job.DestinationPath, true);
         });
+        return successful;
 
         void DumpSound(UndertaleSound sound)
         {
@@ -1139,6 +1326,12 @@ public partial class Program : IScriptInterface
                 externalFilename += ".ogg";
 
             string sourcePath = Paths.JoinVerifyWithinDirectory(dataDirectory, externalFilename);
+            if (!File.Exists(sourcePath))
+            {
+                Console.Error.WriteLine($"External audio file '{sourcePath}' does not exist.");
+                successful = false;
+                return;
+            }
             string externalDirectory = GetExternalDirectory(audioGroupName);
 
             string destinationPath = ReserveUniqueSoundDestinationPath(externalDirectory, soundName, audioExtension, reservedDestinationPaths);
@@ -1153,8 +1346,10 @@ public partial class Program : IScriptInterface
             if (sound.GroupID > builtinSoundGroupId)
             {
                 IList<UndertaleEmbeddedAudio> audioGroup = GetAudioGroupData(sound);
-                if (audioGroup is not null)
+                if (audioGroup is not null && sound.AudioID >= 0 && sound.AudioID < audioGroup.Count)
                     return audioGroup[sound.AudioID].Data;
+                Console.Error.WriteLine($"Sound '{sound.Name?.Content}' has an invalid audio group or audio index.");
+                successful = false;
             }
 
             return emptyWavFileBytes;
@@ -1228,8 +1423,18 @@ public partial class Program : IScriptInterface
     /// </summary>
     /// <param name="codeEntry">The code entry to replace</param>
     /// <param name="fileToReplace">File path which should replace the code entry.</param>
-    private void ReplaceCodeEntryWithFile(string codeEntry, FileInfo fileToReplace)
+    private bool ReplaceCodeEntryWithFile(string codeEntry, FileInfo fileToReplace)
     {
+        if (!fileToReplace.Exists)
+        {
+            Console.Error.WriteLine($"Replacement file '{fileToReplace.FullName}' does not exist.");
+            return false;
+        }
+        if (Data.Code.ByName(codeEntry) is null)
+        {
+            Console.Error.WriteLine($"Data file does not contain a code entry named {codeEntry}!");
+            return false;
+        }
         if (Verbose)
             Console.WriteLine("Replacing " + codeEntry);
 
@@ -1248,7 +1453,7 @@ public partial class Program : IScriptInterface
             if (lastUnderscore <= 0 || secondLastUnderscore <= 0)
             {
                 Console.Error.WriteLine($"Failed to parse object code entry name: \"{codeEntry}\"");
-                return;
+                return false;
             }
 
             // Extract object name, event type, and event subtype
@@ -1297,7 +1502,7 @@ public partial class Program : IScriptInterface
                 else
                 {
                     Console.Error.WriteLine($"Failed to parse event type and subtype for \"{codeEntry}\".");
-                    return;
+                    return false;
                 }
             }
             else if (eventType.SequenceEqual("Collision"))
@@ -1361,7 +1566,9 @@ public partial class Program : IScriptInterface
         if (!result.Successful)
         {
             Console.Error.WriteLine("Code import unsuccessful:\n" + result.PrintAllErrors(false));
+            return false;
         }
+        return true;
     }
 
     /// <summary>
@@ -1369,20 +1576,34 @@ public partial class Program : IScriptInterface
     /// </summary>
     /// <param name="textureEntry">Embedded texture to replace</param>
     /// <param name="fileToReplace">File path which should replace the embedded texture.</param>
-    private void ReplaceTextureWithFile(string textureEntry, FileInfo fileToReplace)
+    private bool ReplaceTextureWithFile(string textureEntry, FileInfo fileToReplace)
     {
+        if (!fileToReplace.Exists)
+        {
+            Console.Error.WriteLine($"Replacement file '{fileToReplace.FullName}' does not exist.");
+            return false;
+        }
         UndertaleEmbeddedTexture texture = Data.EmbeddedTextures.ByName(textureEntry);
 
         if (texture == null)
         {
             Console.Error.WriteLine($"Data file does not contain an embedded texture named {textureEntry}!");
-            return;
+            return false;
         }
 
         if (Verbose)
             Console.WriteLine("Replacing " + textureEntry);
 
-        texture.TextureData.Image = GMImage.FromPng(File.ReadAllBytes(fileToReplace.FullName));
+        try
+        {
+            texture.TextureData.Image = GMImage.FromPng(File.ReadAllBytes(fileToReplace.FullName));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Console.Error.WriteLine($"Failed to import texture '{textureEntry}': {e.Message}");
+            return false;
+        }
     }
 
     /// <summary>
@@ -1467,24 +1688,13 @@ public partial class Program : IScriptInterface
             Console.WriteLine($"Saving new data file to '{outputPath}'");
         try
         {
-            // Save data.win to temp file
-            using (FileStream fs = new(outputPath + "temp", FileMode.Create, FileAccess.Write))
-            {
-                UndertaleIO.Write(fs, Data, MessageHandler);
-            }
-
-            // If we're executing this, the saving was successful. So we can replace the new temp file
-            // with the older file, if it exists.
-            File.Move(outputPath + "temp", outputPath, true);
+            WriteFileViaUniqueTemp(outputPath, stream => UndertaleIO.Write(stream, Data, MessageHandler));
 
             if (Verbose)
                 Console.WriteLine($"Saved data file to '{outputPath}'");
         }
         catch (Exception e)
         {
-            // Delete the temporary file in case we partially wrote it
-            if (File.Exists(outputPath + "temp"))
-                File.Delete(outputPath + "temp");
             throw new IOException($"Could not save data file: {e.Message}");
         }
     }
@@ -1587,6 +1797,9 @@ public partial class Program : IScriptInterface
     /// </summary>
     /// <param name="message">Not used.</param>
     private static void DummyHandler(string message)
+    { }
+
+    private static void DummyWarningHandler(string warning, bool isImportant)
     { }
 
     //TODO: document these as well
