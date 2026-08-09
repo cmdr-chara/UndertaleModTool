@@ -23,6 +23,17 @@ jobs:
       run: |
         dotnet build UndertaleModTool.WinUI/UndertaleModTool.WinUI.csproj -c Debug
         dotnet build UndertaleModCli/UndertaleModCli.csproj -c Debug
+    - name: Verify published WinUI launch
+      shell: pwsh
+      run: |
+        dotnet publish UndertaleModTool.WinUI/UndertaleModTool.WinUI.csproj -c Release -r win-x64 --self-contained true -p:Platform=x64 -o artifacts/winui
+        $process = Start-Process artifacts/winui/UndertaleModTool.WinUI.exe -PassThru
+        Start-Sleep -Seconds 5
+        $process.Refresh()
+        if ($process.HasExited) {
+          throw "Published WinUI app exited during startup with code $($process.ExitCode)."
+        }
+        Stop-Process -Id $process.Id -Force
     - name: Run tests
       run: |
         dotnet test UndertaleModLibTests/UndertaleModLibTests.csproj -c Debug
