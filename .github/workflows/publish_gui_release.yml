@@ -3,6 +3,12 @@ name: Publish stable release of UndertaleModTool GUI
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
 concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: true
@@ -45,6 +51,10 @@ jobs:
     - name: Create zip for stable release Windows GUI
       run: |
         7z a -tzip GUI-${{ matrix.os }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}-isSingleFile-${{ matrix.singlefile }}.zip ./${{ matrix.os }}/* -mx9 
+    - name: Attest stable GUI package
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+      with:
+        subject-path: GUI-${{ matrix.os }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}-isSingleFile-${{ matrix.singlefile }}.zip
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
@@ -104,6 +114,10 @@ jobs:
     - name: Create zip for stable release CLI
       run: |
         7z a -tzip ${{ matrix.output }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}.zip ./${{ matrix.output }}/* -mx9 
+    - name: Attest stable CLI package
+      uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+      with:
+        subject-path: ${{ matrix.output }}-${{ matrix.configuration }}-isBundled-${{ matrix.bundled }}.zip
     - name: Upload artifact
       uses: actions/upload-artifact@v7
       with:
