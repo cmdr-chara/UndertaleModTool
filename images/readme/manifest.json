@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-20",
+  "capture": {
+    "source": "UndertaleModTool WinUI Preview screenshots supplied for the README",
+    "viewport": "1744x951",
+    "frameRate": 8,
+    "paletteColors": 128,
+    "loop": true
+  },
+  "assets": [
+    {
+      "file": "undertalemodtool-resource-tour.gif",
+      "width": 960,
+      "height": 524,
+      "frames": 38,
+      "durationSeconds": 4.76,
+      "bytes": 194468,
+      "sha256": "8dd9ed13ff646aa7f6bc9442184e730e9e78a230c22361d4125a366eb2bd4944",
+      "kind": "slideshow",
+      "notes": "Sprite/logo, embedded texture, and font resource views."
+    },
+    {
+      "file": "undertalemodtool-code-tour.gif",
+      "width": 960,
+      "height": 524,
+      "frames": 26,
+      "durationSeconds": 3.26,
+      "bytes": 137315,
+      "sha256": "b29e7f8eda7af14a66ff5a4f3053fe3e3b88855cf7df27966c633161846f6fa3",
+      "kind": "slideshow",
+      "notes": "GameMaker code and shader resource views."
+    },
+    {
+      "file": "undertalemodtool-winui-tour.gif",
+      "width": 960,
+      "height": 524,
+      "frames": 48,
+      "durationSeconds": 8.0,
+      "bytes": 293011,
+      "sha256": "4dab63227ae60a3f3704e665e03317f2550b27ef486d48715cedbbbf88f623c0",
+      "kind": "slideshow",
+      "notes": "Selected resource screens from the complete supplied screenshot set."
+    }
+  ]
+}

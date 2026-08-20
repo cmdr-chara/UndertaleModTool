@@ -30,6 +30,32 @@ The underlying purpose is still the same: inspect, mod, decompile, edit, and rep
 * Script command entry for quick C# script commands.
 * More restrained Windows UX styling: calmer selection states, better spacing, and less noisy visual contrast.
 
+## See it in action
+
+### Browse and preview resources
+
+<p align="center">
+  <img src="./images/readme/undertalemodtool-resource-tour.gif" width="960" alt="UndertaleModTool WinUI Preview browsing sprites, textures, and fonts" />
+</p>
+
+<p align="center"><sub>Move from sprite and logo inspection to embedded texture and font previews.</sub></p>
+
+### Inspect code and shaders
+
+<p align="center">
+  <img src="./images/readme/undertalemodtool-code-tour.gif" width="960" alt="UndertaleModTool WinUI Preview inspecting GameMaker code and shader resources" />
+</p>
+
+<p align="center"><sub>Open GameMaker code entries and shader resources without leaving the resource browser.</sub></p>
+
+### A quick tour
+
+<p align="center">
+  <img src="./images/readme/undertalemodtool-winui-tour.gif" width="960" alt="Selected UndertaleModTool WinUI Preview resource screens" />
+</p>
+
+<p align="center"><sub>Selected screens from the WinUI preview while browsing a real Deltarune <code>data.win</code> file.</sub></p>
+
 ## Scope
 
 This fork is Windows-only because it uses WinUI 3 and the Windows App SDK.
