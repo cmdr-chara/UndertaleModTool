@@ -47,7 +47,7 @@
         </BootstrapperPackage>
         <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
             <Visible>False</Visible>
-            <ProductName>.NET Framework 3.5 SP1</ProductName>
+            <ProductName>Microsoft .NET Framework 3.5 SP1</ProductName>
             <Install>false</Install>
         </BootstrapperPackage>
     </ItemGroup>
@@ -89,7 +89,7 @@
         </PackageReference>
         <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
         <PackageReference Include="PropertyChanged.Fody" Version="4.1.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.10" />
+        <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.11" />
     </ItemGroup>
     <Target Name="AfterResolveReferences">
         <ItemGroup>
