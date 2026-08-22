@@ -117,6 +117,7 @@ public sealed class WinUiToolSettings
                 }
                 File.Move(tempPath, path, overwrite: true);
                 tempPath = null;
+                WinUiFileAssociations.Apply(Instance.AutomaticFileAssociation);
                 error = null;
                 return true;
             }
