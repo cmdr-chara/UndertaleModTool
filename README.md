@@ -1,36 +1,32 @@
 # UndertaleModTool WinUI Preview
 
-A personal experimental WinUI 3 fork of [UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool), focused on a modern Windows editing experience for GameMaker data files.
+An experimental WinUI 3 frontend for [UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool), focused on exploring a cleaner, more modern Windows editing experience for GameMaker data files.
 
-This is not an official replacement for upstream UndertaleModTool. It is a Windows-only fork that keeps the original project, license, and credits intact while exploring a different UI direction.
+> [!IMPORTANT]
+> **The WinUI 3 frontend is an experiment, not the planned long-term replacement for upstream UndertaleModTool.**
+>
+> Heavy feature development is not currently planned. Maintenance will focus mainly on **bug fixes, stability, compatibility, and critical regressions**. Future architectural work may explore a separate cross-platform direction.
 
-## Status
+The original WPF application, UndertaleModLib, CLI, scripts, research, license, and contributor credits remain preserved in this fork.
 
-This fork is a preview. Expect rough edges.
+## Why This Exists
 
-The goal is to make common editing and inspection workflows easier on Windows without creating maintenance pressure for upstream.
+UndertaleModTool is extremely capable, but its classic interface can be dense. This fork was created to test how its workflows could feel in a more modern Windows-native UI without forcing that direction onto the upstream project.
 
-## Why This Fork Exists
+The experiment has been useful for exploring resource navigation, previews, editing workflows, performance, and the boundaries between the UI and UndertaleModLib.
 
-The classic UndertaleModTool UI is powerful, but dense. This fork experiments with a more direct Windows-native shell for browsing, previewing, and editing resources.
+## WinUI Preview Highlights
 
-The underlying purpose is still the same: inspect, mod, decompile, edit, and repack Undertale, Deltarune, and other GameMaker data files.
+- WinUI 3 / Windows App SDK interface.
+- Resource browsing with categories, counts, filtering, and tabs.
+- Sprite, texture, font, audio, shader, code, and other resource inspection.
+- Texture atlas interaction and richer media previews.
+- Preview caching and less eager rendering for heavier resources.
+- Script command support.
+- Modernized spacing, navigation, selection, and empty states.
+- Shared UndertaleModLib and Underanalyzer functionality from the main project.
 
-## Improvements
-
-* WinUI 3 interface with a flatter, more native Windows layout.
-* Cleaner resource browsing with category counts, filtering, tabs, and calmer navigation.
-* Richer sprite and texture previews with zoom controls, frame navigation, larger preview windows, and export actions near the preview.
-* Embedded texture atlas interaction, including selecting texture page items directly from atlas previews.
-* In-app playback for embedded audio and sound resources.
-* More visible audio metadata, including format, byte size, linked embedded audio ID, volume, pitch, preload, and group information.
-* Less eager rendering for heavy image, sprite, room, and texture previews.
-* Preview caching for faster repeated preview and export workflows.
-* Cleaner empty state and recent-file flow.
-* Script command entry for quick C# script commands.
-* More restrained Windows UX styling: calmer selection states, better spacing, and less noisy visual contrast.
-
-## See it in action
+## Screenshots
 
 ### Browse and preview resources
 
@@ -38,47 +34,45 @@ The underlying purpose is still the same: inspect, mod, decompile, edit, and rep
   <img src="./images/readme/undertalemodtool-resource-tour.gif" width="960" alt="UndertaleModTool WinUI Preview browsing sprites, textures, and fonts" />
 </p>
 
-<p align="center"><sub>Move from sprite and logo inspection to embedded texture and font previews.</sub></p>
-
 ### Inspect code and shaders
 
 <p align="center">
   <img src="./images/readme/undertalemodtool-code-tour.gif" width="960" alt="UndertaleModTool WinUI Preview inspecting GameMaker code and shader resources" />
 </p>
 
-<p align="center"><sub>Open GameMaker code entries and shader resources without leaving the resource browser.</sub></p>
-
-### A quick tour
+### Quick tour
 
 <p align="center">
   <img src="./images/readme/undertalemodtool-winui-tour.gif" width="960" alt="Selected UndertaleModTool WinUI Preview resource screens" />
 </p>
 
-<p align="center"><sub>Selected screens from the WinUI preview while browsing a real Deltarune <code>data.win</code> file.</sub></p>
+## Maintenance Scope
 
-## Scope
+This branch will remain available and maintained where reasonable, but its scope is intentionally limited.
 
-This fork is Windows-only because it uses WinUI 3 and the Windows App SDK.
+Current priorities are:
 
-Cross-platform work belongs in a separate Avalonia, Uno, or other cross-platform UI direction. This fork is deliberately the Windows experiment.
+1. Fix serious bugs and regressions.
+2. Keep compatibility with relevant UndertaleModLib and GameMaker format changes where practical.
+3. Preserve a usable and stable WinUI build.
 
-## Relationship To Upstream
+Large new WinUI-specific systems or major UI expansions are not a priority.
+
+## Relationship to Upstream
 
 This repository is based on [UnderminersTeam/UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool).
 
-Original upstream work, contributors, scripts, data format research, and license terms remain credited and preserved. This fork is not maintained by the Underminers team unless explicitly stated upstream.
+It is an independent fork and is **not maintained or endorsed by the Underminers team unless explicitly stated by them**.
 
-## Quick Start
+Upstream remains the authoritative project for UndertaleModTool itself.
 
-### Run From Source
+## Build From Source
 
 Requirements:
 
-* Windows 10 1809 or newer, or Windows 11.
-* .NET 10 SDK or newer.
-* Git submodules initialized.
-
-Clone with submodules:
+- Windows 10 1809 or newer, or Windows 11.
+- .NET 10 SDK or newer.
+- Git submodules initialized.
 
 ```powershell
 git clone --recurse-submodules https://github.com/cmdr-chara/UndertaleModTool.git
@@ -86,53 +80,39 @@ cd UndertaleModTool
 git switch winui-preview
 ```
 
-Run the WinUI preview:
+Run:
 
 ```powershell
 dotnet run --project .\UndertaleModTool.WinUI\UndertaleModTool.WinUI.csproj -c Debug -p:LangVersion=latest
 ```
 
-Build the WinUI preview:
+Build:
 
 ```powershell
 dotnet build .\UndertaleModTool.WinUI\UndertaleModTool.WinUI.csproj -c Debug -p:LangVersion=latest
 ```
 
-## Opening GameMaker Data Files
+## Supported Data Files
 
-Use **Open data file** and select a supported GameMaker data file, such as:
+The WinUI frontend can open supported GameMaker data files such as:
 
-* `data.win`
-* `game.ios`
-* `game.unx`
-* `game.droid`
+- `data.win`
+- `game.ios`
+- `game.unx`
+- `game.droid`
 
-Always keep a backup of the original file before saving changes. Tools do not need malice to ruin your evening; a bug is enough.
+**Always keep a backup of the original game data before saving modifications.**
 
-## Included Projects
+## Repository Layout
 
-Important projects in this fork:
+- `UndertaleModTool.WinUI` — experimental WinUI 3 frontend.
+- `UndertaleModTool` — original WPF frontend.
+- `UndertaleModLib` — shared GameMaker data library.
+- `UndertaleModCli` — command-line tooling.
+- `Underanalyzer` — analysis/decompiler submodule.
+- `UndertaleModTests` / `UndertaleModLibTests` — test projects.
 
-* `UndertaleModTool.WinUI` - the experimental WinUI 3 interface.
-* `UndertaleModTool` - the original WPF interface from upstream.
-* `UndertaleModCli` - command-line tooling.
-* `UndertaleModLib` - shared core library for GameMaker data files.
-* `Underanalyzer` - submodule used for analysis and decompiler work.
-
-## Original Features
-
-The upstream tool supports:
-
-* Reading and writing GameMaker data files.
-* Recreating decoded data back into valid game data files.
-* Editing many known and unknown resource values.
-* GML VM code editing.
-* High-level GML decompilation and compilation.
-* Script-based automation.
-* Room and level editing.
-* Core library usage from external tools.
-
-For detailed data format information, see the upstream [UndertaleModTool wiki](https://github.com/UnderminersTeam/UndertaleModTool/wiki).
+For documentation about UndertaleModTool and GameMaker data formats, see the upstream [UndertaleModTool wiki](https://github.com/UnderminersTeam/UndertaleModTool/wiki).
 
 ## License
 
@@ -140,14 +120,11 @@ This fork preserves the upstream license. See [LICENSE.txt](LICENSE.txt).
 
 ## Credits
 
-Original UndertaleModTool project:
+UndertaleModTool and the underlying research exist because of the work of the upstream project and its contributors:
 
-* [UnderminersTeam/UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool)
-* [UndertaleModTool contributors](https://github.com/UnderminersTeam/UndertaleModTool/graphs/contributors)
-
-Research and related projects credited by upstream:
-
-* [PoroCYon's UNDERTALE decompilation research, maintained by Tomat](https://tomat.dev/undertale)
-* [Donkeybonks's GameMaker data.win bytecode research](https://web.archive.org/web/20191126144953if_/https://github.com/donkeybonks/acolyte/wiki/Bytecode)
-* [PoroCYon's Altar.NET](https://github.com/PoroCYon/Altar.NET)
-* [WarlockD's GMdsam](https://github.com/WarlockD/GMdsam)
+- [UnderminersTeam/UndertaleModTool](https://github.com/UnderminersTeam/UndertaleModTool)
+- [UndertaleModTool contributors](https://github.com/UnderminersTeam/UndertaleModTool/graphs/contributors)
+- [PoroCYon's UNDERTALE decompilation research, maintained by Tomat](https://tomat.dev/undertale)
+- [Donkeybonks's GameMaker data.win bytecode research](https://web.archive.org/web/20191126144953if_/https://github.com/donkeybonks/acolyte/wiki/Bytecode)
+- [PoroCYon's Altar.NET](https://github.com/PoroCYon/Altar.NET)
+- [WarlockD's GMdsam](https://github.com/WarlockD/GMdsam)
