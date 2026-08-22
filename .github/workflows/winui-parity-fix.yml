@@ -1,0 +1,419 @@
+name: WinUI parity integration
+
+on:
+  push:
+    branches:
+      - fix/winui-parity-2026-08-22
+    paths:
+      - .github/workflows/winui-parity-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  integrate:
+    runs-on: windows-latest
+    steps:
+      - name: Check out parity branch
+        uses: actions/checkout@v6
+        with:
+          ref: fix/winui-parity-2026-08-22
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Merge current upstream and resolve fork-specific conflicts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/UnderminersTeam/UndertaleModTool.git || true
+          git fetch upstream master
+
+          set +e
+          git merge --no-commit --no-ff upstream/master
+          merge_status=$?
+          set -e
+
+          if [ "$merge_status" -ne 0 ]; then
+            echo "Merge reported conflicts; resolving the known fork/upstream overlaps."
+          fi
+
+          ours=(
+            "UndertaleModCli/UndertaleModCli.csproj"
+            "UndertaleModTests/UndertaleModTests.csproj"
+            "UndertaleModTool/MainWindow.xaml.cs"
+          )
+          for path in "${ours[@]}"; do
+            if git ls-files -u -- "$path" | grep -q .; then
+              git checkout --ours -- "$path"
+              git add -- "$path"
+            fi
+          done
+
+          theirs=(
+            "UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMap.cs"
+            "UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMethodsMap.cs"
+          )
+          for path in "${theirs[@]}"; do
+            if git ls-files -u -- "$path" | grep -q .; then
+              git checkout --theirs -- "$path"
+              git add -- "$path"
+            fi
+          done
+
+          unresolved="$(git diff --name-only --diff-filter=U)"
+          if [ -n "$unresolved" ]; then
+            echo "Unexpected merge conflicts remain:"
+            echo "$unresolved"
+            exit 1
+          fi
+
+          git submodule update --init --recursive
+
+      - name: Apply WinUI parity changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def read(path):
+              p = Path(path)
+              return p, p.read_text(encoding="utf-8-sig")
+
+          def write(p, text):
+              p.write_text(text, encoding="utf-8", newline="\n")
+
+          # Preserve the WinUI-compatible compilation guards while taking the
+          # current upstream reference-search implementation.
+          p, text = read("UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMap.cs")
+          if not text.startswith("#nullable disable\n"):
+              text = "#nullable disable\n" + text
+          write(p, text)
+
+          p, text = read("UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMethodsMap.cs")
+          if not text.startswith("#nullable disable\n"):
+              text = "#nullable disable\n" + text
+          if "#if !DISABLE_XAML_GENERATED_MAIN\nusing System.Windows;\n#endif" not in text:
+              text = text.replace(
+                  "using System.Windows;\n",
+                  "#if !DISABLE_XAML_GENERATED_MAIN\nusing System.Windows;\n#endif\n",
+                  1,
+              )
+          main_window = "        private static readonly MainWindow mainWindow = Application.Current.MainWindow as MainWindow;\n"
+          if main_window in text and "#if !DISABLE_XAML_GENERATED_MAIN\n" + main_window not in text:
+              text = text.replace(
+                  main_window,
+                  "#if !DISABLE_XAML_GENERATED_MAIN\n" + main_window + "#endif\n",
+                  1,
+              )
+          text = text.replace(
+              "                List<Dictionary<string, List<object>>> dicts = new();",
+              "                ConcurrentBag<Dictionary<string, List<object>>> dicts = new();",
+          )
+          if "#if !DISABLE_XAML_GENERATED_MAIN\n            mainWindow.IsEnabled = false;" not in text:
+              text = text.replace(
+                  "            mainWindow.IsEnabled = false;\n",
+                  "#if !DISABLE_XAML_GENERATED_MAIN\n            mainWindow.IsEnabled = false;\n#endif\n",
+                  1,
+              )
+          progress = (
+              "                mainWindow.InitializeProgressDialog(\"Searching in progress...\", \"Please wait...\");\n"
+              "                mainWindow.SetProgressBar(null, \"Assets\", 0, assets.Count);\n"
+              "                mainWindow.StartProgressBarUpdater();\n"
+          )
+          if progress in text and "#if !DISABLE_XAML_GENERATED_MAIN\n" + progress not in text:
+              text = text.replace(progress, "#if !DISABLE_XAML_GENERATED_MAIN\n" + progress + "#endif\n", 1)
+          increment = "                                mainWindow.IncrementProgressParallel();\n"
+          if increment in text and "#if !DISABLE_XAML_GENERATED_MAIN\n" + increment not in text:
+              text = text.replace(increment, "#if !DISABLE_XAML_GENERATED_MAIN\n" + increment + "#endif\n", 1)
+          finish = (
+              "                await mainWindow.StopProgressBarUpdater();\n"
+              "                mainWindow.HideProgressBar();\n\n"
+              "                mainWindow.IsEnabled = true;\n"
+          )
+          if finish in text and "#if !DISABLE_XAML_GENERATED_MAIN\n" + finish not in text:
+              text = text.replace(finish, "#if !DISABLE_XAML_GENERATED_MAIN\n" + finish + "#endif\n", 1)
+          write(p, text)
+
+          # Preserve fork test/CLI additions while taking the dependency bumps
+          # from the current upstream commits.
+          for filename, old, new in (
+              ("UndertaleModCli/UndertaleModCli.csproj", 'System.CommandLine\" Version=\"2.0.10', 'System.CommandLine\" Version=\"2.0.11'),
+              ("UndertaleModTests/UndertaleModTests.csproj", 'System.ComponentModel.Composition\" Version=\"10.0.10', 'System.ComponentModel.Composition\" Version=\"10.0.11'),
+          ):
+              p, text = read(filename)
+              text = text.replace(old, new)
+              write(p, text)
+
+          # Bring the upstream safe Extension defaults into the fork's WPF GUI.
+          p, text = read("UndertaleModTool/MainWindow.xaml.cs")
+          old = '''                    else if (obj is UndertaleExtension && IsExtProductIDEligible == Visibility.Visible)\n                    {\n                        var newProductID = new byte[] { 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0xDD, 0x06, 0x60, 0xBE, 0xEF, 0xED, 0xBA, 0x0B, 0xAB, 0xBA, 0xBE };\n'''
+          new = '''                    else if (obj is UndertaleExtension extension && IsExtProductIDEligible == Visibility.Visible)\n                    {\n                        extension.FolderName = Data.Strings.MakeString(\"\");\n                        extension.ClassName = Data.Strings.MakeString(\"\");\n                        extension.Version = Data.Strings.MakeString(\"1.0.0\");\n\n                        var newProductID = new byte[] { 0xBA, 0x5E, 0xBA, 0x11, 0xBA, 0xDD, 0x06, 0x60, 0xBE, 0xEF, 0xED, 0xBA, 0x0B, 0xAB, 0xBA, 0xBE };\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif "extension.FolderName = Data.Strings.MakeString" not in text:
+              raise SystemExit("Could not locate WPF Extension creation block")
+          write(p, text)
+
+          # Apply the same safe defaults to newly-created WinUI Extensions.
+          p, text = read("UndertaleModTool.WinUI/MainPage.xaml.cs")
+          old = '''            case UndertaleExtension when IsExtensionProductIdEligible(data):\n                data.FORM.EXTN.productIdData.Add(\n'''
+          new = '''            case UndertaleExtension extension when IsExtensionProductIdEligible(data):\n                extension.FolderName = data.Strings.MakeString(string.Empty);\n                extension.ClassName = data.Strings.MakeString(string.Empty);\n                extension.Version = data.Strings.MakeString(\"1.0.0\");\n                data.FORM.EXTN.productIdData.Add(\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif "extension.FolderName = data.Strings.MakeString" not in text:
+              raise SystemExit("Could not locate WinUI Extension creation block")
+          write(p, text)
+
+          parity_file = Path("UndertaleModTool.WinUI/MainPage.Parity.cs")
+          parity_file.write_text(r'''using Microsoft.UI.Xaml.Controls;
+using UndertaleModLib;
+
+namespace UndertaleModTool_WinUI;
+
+public sealed partial class MainPage
+{
+    private const string VariableChunkCategoryLabel = "Variable chunk";
+    private bool _parityFeaturesInitialized;
+    private bool _isInjectingParityCategory;
+
+    internal void InitializeParityFeatures()
+    {
+        if (_parityFeaturesInitialized)
+            return;
+
+        _parityFeaturesInitialized = true;
+        CategoryList.RegisterPropertyChangedCallback(
+            ItemsControl.ItemsSourceProperty,
+            (_, _) => EnsureVariableChunkCategory());
+        EnsureVariableChunkCategory();
+    }
+
+    private void EnsureVariableChunkCategory()
+    {
+        if (_isInjectingParityCategory || _data?.FORM?.VARI is null)
+            return;
+        if (_categories.Any(category => string.Equals(category.Label, VariableChunkCategoryLabel, StringComparison.Ordinal)))
+            return;
+
+        _isInjectingParityCategory = true;
+        try
+        {
+            VariableChunkSettings settings = new(_data);
+            ResourceItem item = BuildResourceItem(settings, 0);
+            ResourceCategory category = new(
+                VariableChunkCategoryLabel,
+                Symbol.Setting,
+                1,
+                new[] { item },
+                null);
+
+            _categories = _categories.Concat(new[] { category }).ToArray();
+            CategoryList.ItemsSource = _categories;
+        }
+        finally
+        {
+            _isInjectingParityCategory = false;
+        }
+    }
+
+    private sealed class VariableChunkSettings(UndertaleData data)
+    {
+        public uint InstanceVarCount
+        {
+            get => data.VarCount1;
+            set => data.VarCount1 = value;
+        }
+
+        public uint InstanceVarCountAgain
+        {
+            get => data.VarCount2;
+            set => data.VarCount2 = value;
+        }
+
+        public uint MaxLocalVarCount
+        {
+            get => data.MaxLocalVarCount;
+            set => data.MaxLocalVarCount = value;
+        }
+
+        public bool DifferentVarCounts
+        {
+            get => data.DifferentVarCounts;
+            set => data.DifferentVarCounts = value;
+        }
+
+        public override string ToString() => "VARI chunk settings";
+    }
+}
+''', encoding="utf-8", newline="\n")
+
+          associations_file = Path("UndertaleModTool.WinUI/WinUiFileAssociations.cs")
+          associations_file.write_text(r'''using Microsoft.Win32;
+using System.Runtime.InteropServices;
+
+namespace UndertaleModTool_WinUI;
+
+internal static class WinUiFileAssociations
+{
+    private const string SoftwareClassName = "UndertaleModTool.WinUI";
+    private const long ShcneAssocChanged = 0x08000000;
+    private static readonly string[] Extensions = [".win", ".unx", ".ios", ".droid"];
+
+    [DllImport("shell32.dll")]
+    private static extern void SHChangeNotify(long eventId, uint flags, IntPtr item1, IntPtr item2);
+
+    internal static void Apply(bool enabled)
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        try
+        {
+            if (enabled)
+                CreateAssociations();
+            else
+                RemoveAssociations();
+        }
+        catch
+        {
+            // Association failure must never prevent the editor from starting or saving settings.
+        }
+    }
+
+    private static void CreateAssociations()
+    {
+        string? executable = Environment.ProcessPath;
+        if (string.IsNullOrWhiteSpace(executable))
+            return;
+
+        using RegistryKey classes = Registry.CurrentUser.CreateSubKey(@"Software\Classes", writable: true);
+        using RegistryKey app = classes.CreateSubKey(SoftwareClassName, writable: true);
+        bool changed = false;
+
+        changed |= SetDefaultValue(app, string.Empty, "UndertaleModTool WinUI Preview");
+        changed |= SetDefaultValue(app, @"shell\open\command", $"\"{executable}\" \"%1\"");
+
+        foreach (string extension in Extensions)
+            changed |= SetDefaultValue(classes, extension, SoftwareClassName);
+
+        if (changed)
+            SHChangeNotify(ShcneAssocChanged, 0, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    private static void RemoveAssociations()
+    {
+        using RegistryKey classes = Registry.CurrentUser.CreateSubKey(@"Software\Classes", writable: true);
+        bool changed = false;
+
+        foreach (string extension in Extensions)
+        {
+            using RegistryKey? extensionKey = classes.OpenSubKey(extension, writable: false);
+            if (!string.Equals(extensionKey?.GetValue(string.Empty) as string, SoftwareClassName, StringComparison.Ordinal))
+                continue;
+
+            extensionKey?.Dispose();
+            classes.DeleteSubKeyTree(extension, throwOnMissingSubKey: false);
+            changed = true;
+        }
+
+        if (classes.OpenSubKey(SoftwareClassName, writable: false) is RegistryKey appKey)
+        {
+            appKey.Dispose();
+            classes.DeleteSubKeyTree(SoftwareClassName, throwOnMissingSubKey: false);
+            changed = true;
+        }
+
+        if (changed)
+            SHChangeNotify(ShcneAssocChanged, 0, IntPtr.Zero, IntPtr.Zero);
+    }
+
+    private static bool SetDefaultValue(RegistryKey parent, string subkeyName, string value)
+    {
+        using RegistryKey key = string.IsNullOrEmpty(subkeyName)
+            ? parent
+            : parent.CreateSubKey(subkeyName, writable: true);
+        string? existing = key.GetValue(string.Empty) as string;
+        if (string.Equals(existing, value, StringComparison.Ordinal))
+            return false;
+
+        key.SetValue(string.Empty, value, RegistryValueKind.String);
+        return true;
+    }
+}
+''', encoding="utf-8", newline="\n")
+
+          # Initialize parity hooks and apply persisted file-association settings at startup.
+          p, text = read("UndertaleModTool.WinUI/MainWindow.xaml.cs")
+          old = '''        RootFrame.Navigate(typeof(MainPage));\n        OpenInitialDataFile(startupDataFilePath);\n'''
+          new = '''        RootFrame.Navigate(typeof(MainPage));\n        if (RootFrame.Content is MainPage page)\n            page.InitializeParityFeatures();\n        WinUiToolSettings.EnsureLoaded();\n        WinUiFileAssociations.Apply(WinUiToolSettings.Instance.AutomaticFileAssociation);\n        OpenInitialDataFile(startupDataFilePath);\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif "page.InitializeParityFeatures();" not in text:
+              raise SystemExit("Could not locate MainWindow root navigation block")
+          write(p, text)
+
+          # Make the placeholder setting real and apply changes immediately when settings are saved.
+          p, text = read("UndertaleModTool.WinUI/WinUiToolSettings.cs")
+          text = text.replace(
+              "    public bool AutomaticFileAssociation { get; set; } = true;",
+              "    public bool AutomaticFileAssociation { get; set; }",
+              1,
+          )
+          old = '''                File.Move(tempPath, path, overwrite: true);\n                tempPath = null;\n                error = null;\n                return true;\n'''
+          new = '''                File.Move(tempPath, path, overwrite: true);\n                tempPath = null;\n                WinUiFileAssociations.Apply(Instance.AutomaticFileAssociation);\n                error = null;\n                return true;\n'''
+          if old in text:
+              text = text.replace(old, new, 1)
+          elif "WinUiFileAssociations.Apply(Instance.AutomaticFileAssociation);" not in text:
+              raise SystemExit("Could not locate settings save block")
+          write(p, text)
+          PY
+
+          git add -- \
+            UndertaleModCli/UndertaleModCli.csproj \
+            UndertaleModTests/UndertaleModTests.csproj \
+            UndertaleModTool/MainWindow.xaml.cs \
+            UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMap.cs \
+            UndertaleModTool/Windows/FindReferencesTypesDialog/UndertaleResourceReferenceMethodsMap.cs \
+            UndertaleModTool.WinUI/MainPage.xaml.cs \
+            UndertaleModTool.WinUI/MainPage.Parity.cs \
+            UndertaleModTool.WinUI/MainWindow.xaml.cs \
+            UndertaleModTool.WinUI/WinUiFileAssociations.cs \
+            UndertaleModTool.WinUI/WinUiToolSettings.cs
+
+      - name: Verify merge state
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+          git status --short
+
+      - name: Build WinUI
+        shell: pwsh
+        run: dotnet build .\UndertaleModTool.WinUI\UndertaleModTool.WinUI.csproj -c Debug -p:LangVersion=latest
+
+      - name: Build CLI
+        shell: pwsh
+        run: dotnet build .\UndertaleModCli\UndertaleModCli.csproj -c Debug
+
+      - name: Run library tests
+        shell: pwsh
+        run: dotnet test .\UndertaleModLibTests\UndertaleModLibTests.csproj -c Debug
+
+      - name: Run application tests
+        shell: pwsh
+        run: dotnet test .\UndertaleModTests\UndertaleModTests.csproj -c Debug
+
+      - name: Commit verified parity integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add --all
+          git status --short
+          git commit -m "fix(winui): close upstream parity gaps [parity-fix]"
+          git push origin HEAD:fix/winui-parity-2026-08-22
