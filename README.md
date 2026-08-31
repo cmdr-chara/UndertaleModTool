@@ -15,6 +15,12 @@ UndertaleModTool is extremely capable, but its classic interface can be dense. T
 
 The experiment has been useful for exploring resource navigation, previews, editing workflows, performance, and the boundaries between the UI and UndertaleModLib.
 
+### Work implemented in this fork
+
+The WinUI branch contains substantial original frontend work rather than a theme applied to the WPF application. It introduces a separate Windows App SDK project, resource navigation and filtering, media and texture inspection, editing surfaces, preview caching, and integration with the existing UndertaleModLib/Underanalyzer stack.
+
+The implementation also made the main architectural constraint visible: too much UI behavior is currently concentrated in the primary page. Any future expansion should first split resource-specific presentation and state into smaller testable components. The current maintenance scope therefore prioritizes stability and compatibility over adding more surface area.
+
 ## WinUI Preview Highlights
 
 - WinUI 3 / Windows App SDK interface.
